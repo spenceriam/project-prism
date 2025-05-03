@@ -32,6 +32,21 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - Developed Training Facility environment with basic geometry, props, and interactive elements
 - Created LevelManager for handling level loading, unloading, and transitions
 - Integrated environment system with main game loop
+- Designed and implemented complete User Interface system:
+  - Created UIManager for centralized UI management
+  - Implemented HUD with health, ammo, and objective displays
+  - Designed interactive menu system with main menu, pause menu, and options
+  - Added visual feedback for player damage and hit indicators
+  - Implemented weapon selection UI with visual feedback
+  - Created notification and dialog system for in-game messages
+- Expanded Audio System with comprehensive sound management:
+  - Implemented PlayerAudioController for footstep and movement sounds
+  - Created AmbientSoundSystem for environmental audio and sound zones
+  - Developed EnemyAudioController for enemy audio cues and voice lines
+  - Integrated all audio systems with central AudioManager
+  - Added surface-based footstep variation system
+  - Implemented spatial audio for 3D sound positioning
+  - Created state-based enemy voice system
 
 ## [0.1.0] - 2025-05-03
 
