@@ -36,13 +36,16 @@ This document tracks the current development priorities and tasks for Project Pr
 - [x] Create enemy attack mechanics
 
 ### Environment: Training Facility
-- [ ] Design training facility layout
-- [ ] Implement basic level geometry
-- [ ] Create interactive training elements
-- [ ] Design lighting system for indoor environments
-- [ ] Add environmental objects and props
-- [ ] Implement material system for environment
-- [ ] Create performance optimizations for environment rendering
+- [x] Design training facility layout
+- [x] Implement basic level geometry
+- [x] Create interactive training elements
+- [x] Design lighting system for indoor environments
+- [x] Add environmental objects and props
+- [x] Implement material system for environment
+- [x] Create performance optimizations for environment rendering
+- [x] Add collision meshes for environment objects
+- [x] Implement level-specific gameplay mechanics
+- [x] Add visual effects for interactive elements
 
 ### User Interface
 - [ ] Design HUD elements

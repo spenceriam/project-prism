@@ -1,5 +1,6 @@
 import { GameEngine } from './core/engine';
 import { AssetLoader } from './utils/loader';
+import { LevelManager, LevelType } from './core/level-manager';
 import './styles.css';
 
 /**
@@ -9,6 +10,7 @@ import './styles.css';
 class PrismGame {
   private engine: GameEngine;
   private assetLoader: AssetLoader;
+  private levelManager: LevelManager;
   private loadingScreen: HTMLElement | null;
   private loadingProgress: HTMLElement | null;
   private isDebug: boolean;
@@ -31,6 +33,9 @@ class PrismGame {
     
     // Initialize asset loader
     this.assetLoader = new AssetLoader(this.engine.getScene());
+    
+    // Initialize level manager
+    this.levelManager = new LevelManager(this.engine.getScene(), this.assetLoader);
     
     // Set up global loading progress tracking
     this.assetLoader.setGlobalProgressCallback(this.updateLoadingProgress.bind(this));
@@ -73,14 +78,37 @@ class PrismGame {
    */
   public async start(): Promise<void> {
     try {
-      // Example: Load test models (replace with actual game assets later)
-      // In a real implementation, we would load models based on the current level
-      
       // Start the render loop
       this.engine.startRenderLoop();
       
-      // Hide loading screen when ready
-      this.hideLoadingScreen();
+      // Set callback for when level is loaded
+      this.levelManager.setOnLevelLoadedCallback(() => {
+        // Get the current level
+        const currentLevel = this.levelManager.getCurrentLevel();
+        
+        if (currentLevel) {
+          // Get player spawn position and rotation
+          const spawnPosition = currentLevel.getSpawnPosition();
+          const spawnRotation = currentLevel.getSpawnRotation();
+          
+          // Update camera position and rotation
+          const camera = this.engine.getScene().activeCamera;
+          if (camera) {
+            camera.position = spawnPosition;
+            
+            // Check if camera has rotation property (FreeCamera does)
+            if ('rotation' in camera) {
+              (camera as any).rotation.y = spawnRotation;
+            }
+          }
+          
+          // Hide loading screen when level is ready
+          this.hideLoadingScreen();
+        }
+      });
+      
+      // Load the Training Facility level
+      await this.levelManager.loadLevel(LevelType.TRAINING);
       
       console.log('Project Prism Protocol initialized successfully');
     } catch (error) {
@@ -95,6 +123,19 @@ class PrismGame {
       }
     }
   }
+  
+  /**
+   * Dispose of the game and all its resources
+   */
+  public dispose(): void {
+    if (this.levelManager) {
+      this.levelManager.dispose();
+    }
+    
+    if (this.engine) {
+      this.engine.dispose();
+    }
+  }
 }
 
 // Wait for DOM to be ready
@@ -105,4 +146,9 @@ document.addEventListener('DOMContentLoaded', () => {
   // Create and start the game
   const game = new PrismGame('renderCanvas', isDebug);
   game.start();
+  
+  // Handle window unload to clean up resources
+  window.addEventListener('beforeunload', () => {
+    game.dispose();
+  });
 });
