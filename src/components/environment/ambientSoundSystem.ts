@@ -36,6 +36,12 @@ export interface AmbientSound {
   };
 }
 
+// Interface for zone distance tracking
+interface ZoneDistance {
+  id: string;
+  distance: number;
+}
+
 /**
  * AmbientSoundSystem manages environmental ambient sounds
  */
@@ -96,10 +102,12 @@ export class AmbientSoundSystem {
   private checkZones(): void {
     const previousActiveZones = new Set(this.activeZones);
     const newActiveZones = new Set<string>();
-    let closestZone: { id: string, distance: number } | null = null;
+    
+    // Track the closest zone with its distance
+    let closestZone: { id: string; distance: number } | null = null;
     
     // Check each zone
-    this.soundZones.forEach((zone, id) => {
+    this.soundZones.forEach((zone: AmbientSoundZone, id: string) => {
       // Calculate distance to zone center
       const distance = Vector3.Distance(this.playerPosition, zone.position);
       
@@ -109,7 +117,7 @@ export class AmbientSoundSystem {
         
         // Check if this is the closest zone
         if (closestZone === null || distance < closestZone.distance) {
-          closestZone = { id: id as string, distance };
+          closestZone = { id: id, distance };
         }
       }
     });
@@ -127,12 +135,12 @@ export class AmbientSoundSystem {
       }
     });
     
-    // Update active zones
     this.activeZones = newActiveZones;
     
     // Update main zone if changed
-    if (closestZone && closestZone.id !== this.currentMainZone) {
-      this.changeMainZone(closestZone.id as string);
+    if (closestZone && (closestZone as {id: string; distance: number}).id !== this.currentMainZone) {
+      // We know closestZone is not null here, so it's safe to access id with type assertion
+      this.changeMainZone((closestZone as {id: string; distance: number}).id);
     } else if (!closestZone && this.currentMainZone) {
       // No zones active
       this.currentMainZone = null;

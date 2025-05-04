@@ -9,6 +9,7 @@ import {
   Ray, 
   RayHelper, 
   Color3,
+  Color4,
   ParticleSystem,
   Texture,
   Observable
@@ -178,7 +179,9 @@ export abstract class WeaponBase {
       this.createMuzzleFlash();
       
       // Position weapon initially
-      this.weaponRoot.position = this.currentPosition.clone();
+      if (this.weaponRoot) {
+        this.weaponRoot.position = this.currentPosition.clone();
+      }
       
       console.log(`Weapon ${this.config.name} loaded successfully`);
     } catch (error) {
@@ -224,10 +227,10 @@ export abstract class WeaponBase {
     // Texture
     this.muzzleFlash.particleTexture = new Texture('assets/textures/muzzleFlash.png', this.scene);
     
-    // Colors
-    this.muzzleFlash.color1 = new Color3(1, 0.8, 0.4);
-    this.muzzleFlash.color2 = new Color3(1, 0.5, 0.2);
-    this.muzzleFlash.colorDead = new Color3(0.7, 0.3, 0.1);
+    // Colors - use Color4 with alpha value for particle system
+    this.muzzleFlash.color1 = new Color4(1, 0.8, 0.4, 1.0);
+    this.muzzleFlash.color2 = new Color4(1, 0.5, 0.2, 1.0);
+    this.muzzleFlash.colorDead = new Color4(0.7, 0.3, 0.1, 0.0);
     
     // Size and lifetime
     this.muzzleFlash.minSize = 0.1;
@@ -283,9 +286,11 @@ export abstract class WeaponBase {
       const forward = camera.getDirection(Vector3.Forward());
       const origin = camera.position.clone();
       
-      this.debugRay.ray.origin = origin;
-      this.debugRay.ray.direction = forward;
-      this.debugRay.ray.length = this.config.range;
+      if (this.debugRay && this.debugRay.ray) {
+        this.debugRay.ray.origin = origin;
+        this.debugRay.ray.direction = forward;
+        this.debugRay.ray.length = this.config.range;
+      }
     }
   }
   

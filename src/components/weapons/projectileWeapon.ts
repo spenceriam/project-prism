@@ -5,6 +5,10 @@ import {
   MeshBuilder, 
   StandardMaterial, 
   Color3, 
+  Color4,
+  Quaternion,
+  Matrix,
+  Ray,
   PhysicsImpostor,
   ParticleSystem,
   Texture,
@@ -27,6 +31,7 @@ export interface ProjectileWeaponConfig extends WeaponConfig {
   projectileLifetime: number; // Seconds before projectile despawns
   explosionRadius: number; // Radius of explosion (0 = no explosion)
   explosionForce: number; // Force of explosion
+  spread: number; // Bullet spread in degrees (added for compatibility)
 }
 
 /**
@@ -46,7 +51,7 @@ interface Projectile {
  * Uses physics for projectile movement and collision detection
  */
 export class ProjectileWeapon extends WeaponBase {
-  private config: ProjectileWeaponConfig;
+  protected config: ProjectileWeaponConfig;
   private projectiles: Projectile[] = [];
   private explosionParticles: ParticleSystem | null = null;
   
@@ -89,10 +94,10 @@ export class ProjectileWeapon extends WeaponBase {
     // Texture
     this.explosionParticles.particleTexture = new Texture('assets/textures/explosion.png', this.scene);
     
-    // Colors
-    this.explosionParticles.color1 = new Color3(1, 0.5, 0.1);
-    this.explosionParticles.color2 = new Color3(1, 0.2, 0.1);
-    this.explosionParticles.colorDead = new Color3(0.1, 0.1, 0.1);
+    // Colors - use Color4 with alpha value for particle system
+    this.explosionParticles.color1 = new Color4(1, 0.5, 0.1, 1.0);
+    this.explosionParticles.color2 = new Color4(1, 0.2, 0.1, 1.0);
+    this.explosionParticles.colorDead = new Color4(0.1, 0.1, 0.1, 0.0);
     
     // Size and lifetime
     this.explosionParticles.minSize = 0.3;
@@ -147,10 +152,17 @@ export class ProjectileWeapon extends WeaponBase {
       const randomAngleY = (Math.random() - 0.5) * spreadRadians;
       
       // Create rotation quaternion for spread
-      const spreadQuaternion = BABYLON.Quaternion.RotationYawPitchRoll(randomAngleX, randomAngleY, 0);
+      const rotation = new Quaternion();
+      Quaternion.FromUnitVectorsToRef(Vector3.Forward(), projectileDirection, rotation);
       
-      // Apply rotation to direction
-      projectileDirection = projectileDirection.rotateByQuaternionToRef(spreadQuaternion, projectileDirection);
+      // Apply spread using rotation matrix
+      const spreadRotation = Quaternion.RotationYawPitchRoll(randomAngleY, randomAngleX, 0);
+      rotation.multiplyInPlace(spreadRotation);
+      
+      // Apply rotation to direction using matrix
+      const matrix = Matrix.Identity();
+      rotation.toRotationMatrix(matrix);
+      projectileDirection = Vector3.TransformNormal(Vector3.Forward(), matrix);
     }
     
     // Create projectile velocity
@@ -195,7 +207,7 @@ export class ProjectileWeapon extends WeaponBase {
       
       // Register collision callback
       projectileMesh.physicsImpostor.registerOnPhysicsCollide(
-        PhysicsImpostor.BoxImpostor,
+        PhysicsImpostor.BoxImpostor as unknown as PhysicsImpostor,
         (collider, collidedWith) => {
           this.handleProjectileCollision(projectileMesh);
         }
@@ -251,7 +263,7 @@ export class ProjectileWeapon extends WeaponBase {
         projectile.mesh.position.addInPlace(projectile.velocity.scale(deltaTime));
         
         // Check for collisions
-        const ray = new BABYLON.Ray(
+        const ray = new Ray(
           projectile.mesh.position.subtract(projectile.velocity.scale(deltaTime)),
           projectile.velocity.normalize(),
           projectile.velocity.length() * deltaTime

@@ -430,7 +430,7 @@ export class PlayerController {
     });
     
     // Update grounded state
-    this.grounded = hit && hit.hit && hit.distance <= 1.1;
+    this.grounded = Boolean(hit && hit.hit && hit.distance <= 1.1);
   }
   
   /**

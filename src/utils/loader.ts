@@ -222,7 +222,10 @@ export class AssetLoader {
     });
     
     // Clone skeletons if they exist
-    const clonedSkeletons = original.skeletons?.map(skeleton => skeleton.clone());
+    const clonedSkeletons = original.skeletons?.map(skeleton => {
+      // Clone with a new name based on the original skeleton name
+      return skeleton.clone(`${skeleton.name}_${newName}`, `${skeleton.id}_${newName}`);
+    });
     
     return {
       meshes: clonedMeshes,

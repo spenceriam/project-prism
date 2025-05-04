@@ -1,4 +1,6 @@
 import { Scene, Engine, Vector3, AxesViewer, Color3 } from '@babylonjs/core';
+import '@babylonjs/inspector';
+// @ts-ignore - Stats.js has type issues but works fine at runtime
 import Stats from 'stats.js';
 
 /**
@@ -149,12 +151,21 @@ export class DebugUtility {
     
     // Update draw calls
     if (this.drawCallsElement) {
-      this.drawCallsElement.textContent = `Draw calls: ${this.engine.drawCalls}`;
+      // Access internal _drawCalls property or fallback to 0
+      const drawCalls = (this.engine as any)._drawCalls ? (this.engine as any)._drawCalls.count : 0;
+      this.drawCallsElement.textContent = `Draw calls: ${drawCalls}`;
     }
     
     // Update triangles
     if (this.trianglesElement) {
-      this.trianglesElement.textContent = `Triangles: ${this.engine.getTotalVertices()}`;
+      // Calculate total vertices manually
+      let totalVertices = 0;
+      this.scene.meshes.forEach(mesh => {
+        if (mesh.isEnabled() && mesh.isVisible) {
+          totalVertices += mesh.getTotalVertices();
+        }
+      });
+      this.trianglesElement.textContent = `Triangles: ${totalVertices}`;
     }
   }
 
@@ -175,8 +186,9 @@ export class DebugUtility {
    * @param meshName - Name of the mesh to log info for, or undefined for all meshes
    */
   public logMeshInfo(meshName?: string): void {
+    // Get meshes by name or all meshes
     const meshes = meshName 
-      ? this.scene.getMeshesByName(meshName)
+      ? [this.scene.getMeshByName(meshName)].filter(mesh => mesh !== null)
       : this.scene.meshes;
     
     console.group('Mesh Information');
@@ -201,7 +213,9 @@ export class DebugUtility {
    */
   public toggleWireframe(enable: boolean): void {
     this.scene.meshes.forEach(mesh => {
-      mesh.material?.setWireframe(enable);
+      if (mesh.material) {
+        mesh.material.wireframe = enable;
+      }
     });
   }
 

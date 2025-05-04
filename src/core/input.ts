@@ -59,7 +59,7 @@ export class InputManager {
     movementY: 0
   };
   private actions: Map<string, InputAction> = new Map();
-  private isPointerLocked: boolean = false;
+  private _isPointerLocked: boolean = false;
   private canvas: HTMLCanvasElement;
   
   /**
@@ -114,7 +114,7 @@ export class InputManager {
       this.mouseState.y = event.clientY;
       
       // Update movement if pointer is locked
-      if (this.isPointerLocked) {
+      if (this.isPointerLocked()) {
         this.mouseState.movementX = event.movementX || 0;
         this.mouseState.movementY = event.movementY || 0;
       } else {
@@ -148,7 +148,7 @@ export class InputManager {
    */
   private setupPointerLockHandlers(): void {
     document.addEventListener('pointerlockchange', () => {
-      this.isPointerLocked = document.pointerLockElement === this.canvas;
+      this._isPointerLocked = document.pointerLockElement === this.canvas;
     });
     
     document.addEventListener('pointerlockerror', () => {
@@ -387,7 +387,7 @@ export class InputManager {
    * @returns True if pointer is locked
    */
   public isPointerLocked(): boolean {
-    return this.isPointerLocked;
+    return this._isPointerLocked;
   }
   
   /**
@@ -403,7 +403,7 @@ export class InputManager {
    * Exits pointer lock
    */
   public exitPointerLock(): void {
-    if (this.isPointerLocked) {
+    if (this.isPointerLocked()) {
       document.exitPointerLock();
     }
   }

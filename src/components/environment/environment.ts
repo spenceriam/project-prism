@@ -28,7 +28,7 @@ export abstract class Environment {
    * Load the environment assets and set up the scene
    * @returns Promise that resolves when the environment is loaded
    */
-  public abstract async load(): Promise<void>;
+  public abstract load(): Promise<void>;
 
   /**
    * Get the spawn position for the player in this environment

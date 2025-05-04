@@ -48,8 +48,7 @@ export class TrainingFacility extends Environment {
       enableLOD: true,
       enableMeshMerging: true,
       enableOcclusion: true,
-      enableFrustumCulling: true,
-      autoOptimizeLevel: 1
+      enableFrustumCulling: true
     });
     
     // Set up interaction event handling

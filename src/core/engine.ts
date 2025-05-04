@@ -1,5 +1,6 @@
 import { Engine, Scene, WebGPUEngine, Vector3, HemisphericLight, FreeCamera } from '@babylonjs/core';
 import '@babylonjs/loaders/glTF';
+import '@babylonjs/inspector';
 import Stats from 'stats.js';
 
 /**
@@ -64,10 +65,20 @@ export class GameEngine {
         
         // Replace the engine
         this.engine.dispose();
-        this.engine = webGPUEngine;
+        // Use type assertion to handle the engine type
+        this.engine = webGPUEngine as unknown as Engine;
         
-        // Create a new scene based on the old one
-        this.scene = oldScene.clone();
+        // Create a new scene instead of cloning
+        // Scene.clone() is not available in Babylon.js
+        const newScene = new Scene(this.engine);
+        
+        // Copy essential properties from the old scene
+        newScene.clearColor = oldScene.clearColor;
+        newScene.ambientColor = oldScene.ambientColor;
+        newScene.gravity = oldScene.gravity;
+        
+        // Update the scene reference
+        this.scene = newScene;
         
         console.log('Successfully switched to WebGPU engine');
       }

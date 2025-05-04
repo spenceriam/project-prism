@@ -1,6 +1,17 @@
 import { Scene, Vector3, Sound, Observable } from '@babylonjs/core';
 import { Howl, Howler } from 'howler';
 
+// Extend Howl interface to include our custom properties
+declare module 'howler' {
+  interface Howl {
+    // Add custom metadata property for our sound system
+    metadata?: {
+      category?: SoundCategory;
+      [key: string]: any;
+    };
+  }
+}
+
 /**
  * Sound configuration options
  */
@@ -48,7 +59,7 @@ export class SoundSystem {
   private babylonSounds: Map<string, Sound> = new Map();
   private currentMusic: string | null = null;
   private nextMusic: string | null = null;
-  private fadeTimeout: number | null = null;
+  private fadeTimeout: ReturnType<typeof setTimeout> | null = null;
   
   // Observables for sound events
   public onSoundPlayed: Observable<string> = new Observable<string>();
@@ -87,7 +98,7 @@ export class SoundSystem {
     
     // Update all sound volumes based on their category
     this.sounds.forEach((sound, id) => {
-      const category = sound._category as SoundCategory;
+      const category = sound.metadata?.category;
       if (category) {
         const categoryVolume = this.getCategoryVolume(category);
         sound.volume(categoryVolume);
@@ -388,7 +399,7 @@ export class SoundSystem {
         this.nextMusic = null;
         
         // Notify observers
-        this.onMusicChanged.notifyObservers(this.currentMusic);
+        this.onMusicChanged.notifyObservers(this.currentMusic || '');
       }
       
       this.fadeTimeout = null;

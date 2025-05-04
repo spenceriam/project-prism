@@ -351,7 +351,11 @@ export class HUD {
     this.objectivesList = [];
     
     // Get the objectives stack panel
-    const objectivesStack = this.objectivesContainer.children[1].children[0] as GUI.StackPanel;
+    // Cast to Container to access children property
+    const objectivesContainer = this.objectivesContainer as GUI.Container;
+    // Access children safely with proper casting
+    const innerContainer = objectivesContainer.children[1] as GUI.Container;
+    const objectivesStack = innerContainer.children[0] as GUI.StackPanel;
     
     // Add new objectives
     objectives.forEach((objective, index) => {
@@ -365,7 +369,10 @@ export class HUD {
       
       // Add strikethrough for completed objectives
       if (objective.completed) {
-        objectiveText.textDecoration = "line-through";
+        // Use a different approach for strikethrough
+        objectiveText.text = `~~• ${objective.text}~~`;
+        // Alternatively, we could use a custom style
+        // objectiveText.style = "text-decoration: line-through;"
       }
       
       objectivesStack.addControl(objectiveText);

@@ -76,7 +76,8 @@ export class CollisionSystem {
       collisionMesh.scaling = mesh.scaling.clone();
     } else {
       // For simple meshes, clone the mesh for collision
-      collisionMesh = mesh.clone(collisionName) as Mesh;
+      // Pass null as the parent parameter, we'll set it correctly later
+      collisionMesh = mesh.clone(collisionName, null) as Mesh;
     }
     
     // Set parent to match source mesh

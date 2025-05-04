@@ -135,6 +135,11 @@ export class InteractiveSystem {
     
     const { mesh, config } = interactive;
     
+    // Ensure the mesh has an actionManager
+    if (!mesh.actionManager) {
+      mesh.actionManager = new ActionManager(this.scene);
+    }
+    
     switch (config.type) {
       case InteractiveType.TARGET:
         // For targets, set up hit detection

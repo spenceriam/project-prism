@@ -5,10 +5,14 @@ import {
   AmmoJSPlugin, 
   Mesh, 
   AbstractMesh,
-  PhysicsImpostorParameters
+  PhysicsImpostorParameters,
+  Ray,
+  StandardMaterial,
+  Color3
 } from '@babylonjs/core';
 
 // We'll use AmmoJS for physics
+// Define Ammo.js type - it's a function that returns a Promise
 declare const Ammo: any;
 
 /**
@@ -87,10 +91,30 @@ export class PhysicsSystem {
       // Set up callbacks
       script.onload = () => {
         // Initialize Ammo
-        Ammo().then(() => {
-          console.log('Ammo.js loaded successfully');
-          resolve();
-        });
+        try {
+          // Check if Ammo is defined
+          if (typeof Ammo !== 'undefined') {
+            // Use type assertion to tell TypeScript that Ammo is callable
+            const ammoFunc = Ammo as unknown as () => Promise<void>;
+            const ammoInstance = ammoFunc();
+            
+            if (ammoInstance && typeof ammoInstance.then === 'function') {
+              ammoInstance.then(() => {
+                console.log('Ammo.js loaded successfully');
+                resolve();
+              }).catch((error: Error) => {
+                reject(new Error(`Failed to initialize Ammo.js: ${error.message}`));
+              });
+            } else {
+              console.log('Ammo.js loaded successfully (synchronous)');
+              resolve();
+            }
+          } else {
+            reject(new Error('Ammo.js is not defined after script load'));
+          }
+        } catch (error) {
+          reject(new Error(`Failed to initialize Ammo.js: ${error instanceof Error ? error.message : String(error)}`));
+        }
       };
       
       script.onerror = () => {
@@ -306,11 +330,11 @@ export class PhysicsSystem {
       // Make the debug mesh wireframe and semi-transparent
       debugMesh.material = this.scene.getMaterialByName('physicsDebugMaterial') || 
         (() => {
-          const material = new BABYLON.StandardMaterial('physicsDebugMaterial', this.scene);
-          material.wireframe = true;
-          material.alpha = 0.3;
-          material.emissiveColor = new BABYLON.Color3(0, 1, 0);
-          return material;
+          const debugMaterial = new StandardMaterial('debugMaterial', this.scene);
+          debugMaterial.wireframe = true;
+          debugMaterial.alpha = 0.3;
+          debugMaterial.diffuseColor = new Color3(1, 0, 0);
+          return debugMaterial;
         })();
       
       // Link the debug mesh to the original
@@ -439,7 +463,10 @@ export class PhysicsSystem {
       return;
     }
     
-    this.scene.setGravity(gravity);
+    // Update gravity in the physics engine
+    if (this.scene.getPhysicsEngine()) {
+      this.scene.getPhysicsEngine()!.setGravity(gravity);
+    }
     this.config.gravity = gravity;
   }
   
@@ -488,7 +515,7 @@ export class PhysicsSystem {
       return null;
     }
     
-    const ray = new BABYLON.Ray(from, to.subtract(from).normalize(), Vector3.Distance(from, to));
+    const ray = new Ray(from, to.subtract(from).normalize(), Vector3.Distance(from, to));
     const hit = this.scene.pickWithRay(ray, (mesh) => {
       return mesh.physicsImpostor !== null;
     });

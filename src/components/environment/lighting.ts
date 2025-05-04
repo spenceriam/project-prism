@@ -135,24 +135,30 @@ export class LightingSystem {
       const shadowEnabled = config.spots.shadowEnabled || false;
       const shadowQuality = config.spots.shadowQuality || 512;
 
-      config.spots.positions.forEach((position, index) => {
-        const direction = config.spots.directions[index] || new Vector3(0, -1, 0);
-        const spotLight = new SpotLight(`spot_${index}`, position, direction, angle, exponent, this.scene);
-        spotLight.intensity = intensity;
-        spotLight.diffuse = color;
+      // Ensure spots configuration exists and has directions array
+      if (config.spots && config.spots.positions && config.spots.directions) {
+        config.spots.positions.forEach((position, index) => {
+          // Get direction or use default downward vector
+          const directions = config.spots?.directions;
+          const direction = (directions && index < directions.length) ? 
+            directions[index] : new Vector3(0, -1, 0);
+          const spotLight = new SpotLight(`spot_${index}`, position, direction, angle, exponent, this.scene);
+          spotLight.intensity = intensity;
+          spotLight.diffuse = color;
 
-        // Set up shadows if enabled
-        if (shadowEnabled) {
-          const shadowGenerator = new ShadowGenerator(shadowQuality, spotLight);
-          shadowGenerator.useBlurExponentialShadowMap = true;
-          shadowGenerator.blurScale = 2;
-          shadowGenerator.setDarkness(0.3);
+          // Set up shadows if enabled
+          if (shadowEnabled) {
+            const shadowGenerator = new ShadowGenerator(shadowQuality, spotLight);
+            shadowGenerator.useBlurExponentialShadowMap = true;
+            shadowGenerator.blurScale = 2;
+            shadowGenerator.setDarkness(0.3);
+            
+            this.shadowGenerators.push(shadowGenerator);
+          }
           
-          this.shadowGenerators.push(shadowGenerator);
-        }
-        
-        this.lights.push(spotLight);
-      });
+          this.lights.push(spotLight);
+        });
+      }
     }
   }
 

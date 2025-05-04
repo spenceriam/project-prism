@@ -7,6 +7,9 @@ import {
   MeshBuilder,
   StandardMaterial,
   Color3,
+  Color4,
+  Quaternion,
+  Matrix,
   ParticleSystem,
   Texture
 } from '@babylonjs/core';
@@ -30,7 +33,7 @@ export interface HitscanWeaponConfig extends WeaponConfig {
  * Uses raycasting for hit detection and applies damage instantly
  */
 export class HitscanWeapon extends WeaponBase {
-  private config: HitscanWeaponConfig;
+  protected config: HitscanWeaponConfig;
   private impactParticles: ParticleSystem | null = null;
   private bulletTrails: Map<number, Mesh> = new Map();
   private trailCounter: number = 0;
@@ -67,10 +70,10 @@ export class HitscanWeapon extends WeaponBase {
     // Texture
     this.impactParticles.particleTexture = new Texture('assets/textures/impact.png', this.scene);
     
-    // Colors
-    this.impactParticles.color1 = new Color3(0.8, 0.8, 0.8);
-    this.impactParticles.color2 = new Color3(0.5, 0.5, 0.5);
-    this.impactParticles.colorDead = new Color3(0.3, 0.3, 0.3);
+    // Colors - use Color4 with alpha value for particle system
+    this.impactParticles.color1 = new Color4(0.8, 0.8, 0.8, 1.0);
+    this.impactParticles.color2 = new Color4(0.5, 0.5, 0.5, 1.0);
+    this.impactParticles.colorDead = new Color4(0.3, 0.3, 0.3, 0.0);
     
     // Size and lifetime
     this.impactParticles.minSize = 0.05;
@@ -116,10 +119,12 @@ export class HitscanWeapon extends WeaponBase {
       const randomAngleY = (Math.random() - 0.5) * spreadRadians;
       
       // Create rotation quaternion for spread
-      const spreadQuaternion = BABYLON.Quaternion.RotationYawPitchRoll(randomAngleX, randomAngleY, 0);
+      const spreadQuaternion = Quaternion.RotationYawPitchRoll(randomAngleX, randomAngleY, 0);
       
       // Apply rotation to direction
-      rayDirection = rayDirection.rotateByQuaternionToRef(spreadQuaternion, rayDirection);
+      const matrix = Matrix.Identity();
+      spreadQuaternion.toRotationMatrix(matrix);
+      rayDirection = Vector3.TransformNormal(rayDirection, matrix);
     }
     
     // Create ray

@@ -61,7 +61,8 @@ export class DialogSystem {
     this.notificationContainer.horizontalAlignment = GUI.Control.HORIZONTAL_ALIGNMENT_RIGHT;
     this.notificationContainer.verticalAlignment = GUI.Control.VERTICAL_ALIGNMENT_TOP;
     this.notificationContainer.top = 20;
-    this.notificationContainer.right = 20;
+    // Set right padding using paddingRight instead of right property
+    this.notificationContainer.paddingRight = "20px";
     this.notificationContainer.spacing = 10;
     this.dialogContainer.addControl(this.notificationContainer);
   }
