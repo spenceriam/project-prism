@@ -108,17 +108,15 @@ export class GameEngine {
   }
   
   /**
-   * Creates a default scene with basic lighting and camera
+   * Creates a default scene with basic lighting (no camera)
    */
   public createDefaultScene(): void {
     // Create a basic light
     const light = new HemisphericLight('light', new Vector3(0, 1, 0), this.scene);
     light.intensity = 0.7;
     
-    // Create a default camera
-    const camera = new FreeCamera('camera', new Vector3(0, 5, -10), this.scene);
-    camera.setTarget(Vector3.Zero());
-    camera.attachControl(this.canvas, true);
+    // Note: We don't create a default camera here anymore
+    // The PlayerController will be used instead when a level is loaded
   }
   
   /**

@@ -15,6 +15,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
   - Optimized environment for browser performance
 
 ### Fixed
+- Fixed player controller implementation issues:
+  - Fixed camera initialization to properly use PlayerController instead of default FreeCamera
+  - Improved pointer lock implementation for mouse look control with cross-browser compatibility
+  - Added proper event handling for mouse input and pointer lock state changes
+  - Fixed collision detection between player and environment objects
 - Fixed TypeScript errors in ambientSoundSystem.ts by correcting interface declarations and adding proper type assertions
 - Fixed TypeScript errors in optimization.ts by simplifying the optimization system while maintaining core functionality
 - Fixed TypeScript errors in playerController.ts related to boolean | null type issues

@@ -1,6 +1,7 @@
 import { GameEngine } from './core/engine';
 import { AssetLoader } from './utils/loader';
 import { LevelManager, LevelType } from './core/level-manager';
+import { PlayerController } from './components/player/playerController';
 import './styles.css';
 
 /**
@@ -11,6 +12,7 @@ class PrismGame {
   private engine: GameEngine;
   private assetLoader: AssetLoader;
   private levelManager: LevelManager;
+  private playerController: PlayerController | null = null;
   private loadingScreen: HTMLElement | null;
   private loadingProgress: HTMLElement | null;
   private isDebug: boolean;
@@ -78,6 +80,25 @@ class PrismGame {
    */
   public async start(): Promise<void> {
     try {
+      // Add click handler to request pointer lock
+      const canvas = this.engine.getCanvas();
+      canvas.addEventListener('click', () => {
+        // Request pointer lock on canvas click if not already locked
+        if (document.pointerLockElement !== canvas) {
+          console.log('Canvas clicked, requesting pointer lock');
+          canvas.requestPointerLock = canvas.requestPointerLock || 
+                                     (canvas as any).mozRequestPointerLock || 
+                                     (canvas as any).webkitRequestPointerLock;
+          canvas.requestPointerLock();
+        }
+      });
+      
+      // Prevent context menu on right-click
+      canvas.addEventListener('contextmenu', (event) => {
+        event.preventDefault();
+        return false;
+      });
+      
       // Start the render loop
       this.engine.startRenderLoop();
       
@@ -91,15 +112,24 @@ class PrismGame {
           const spawnPosition = currentLevel.getSpawnPosition();
           const spawnRotation = currentLevel.getSpawnRotation();
           
-          // Update camera position and rotation
-          const camera = this.engine.getScene().activeCamera;
-          if (camera) {
-            camera.position = spawnPosition;
-            
-            // Check if camera has rotation property (FreeCamera does)
-            if ('rotation' in camera) {
-              (camera as any).rotation.y = spawnRotation;
-            }
+          // Initialize player controller if it doesn't exist yet
+          if (!this.playerController) {
+            console.log('Initializing PlayerController...');
+            this.playerController = new PlayerController(
+              this.engine.getScene(),
+              spawnPosition,
+              {
+                walkSpeed: 5.0,
+                sprintSpeed: 8.0,
+                crouchSpeed: 2.5,
+                jumpForce: 8.0,
+                lookSensitivity: 0.1,
+                maxLookAngle: 85
+              }
+            );
+          } else {
+            // Teleport existing player to spawn position
+            this.playerController.teleport(spawnPosition);
           }
           
           // Hide loading screen when level is ready
@@ -128,6 +158,11 @@ class PrismGame {
    * Dispose of the game and all its resources
    */
   public dispose(): void {
+    if (this.playerController) {
+      this.playerController.dispose();
+      this.playerController = null;
+    }
+    
     if (this.levelManager) {
       this.levelManager.dispose();
     }

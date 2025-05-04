@@ -119,6 +119,15 @@ export class PlayerController {
     this.camera.inertia = 0.5;
     this.camera.angularSensibility = 800; // Lower is more sensitive
     
+    // Set this camera as the active camera
+    this.scene.activeCamera = this.camera;
+    
+    // Attach camera controls to canvas
+    const canvas = this.scene.getEngine().getRenderingCanvas();
+    if (canvas) {
+      this.camera.attachControl(canvas, true);
+    }
+    
     // Create player collider
     this.playerCollider = Mesh.CreateCapsule('playerCollider', {
       height: 1.8,
@@ -187,9 +196,30 @@ export class PlayerController {
       }
     });
     
-    // Handle pointer lock changes
-    document.addEventListener('pointerlockchange', () => {
-      this.isPointerLocked = document.pointerLockElement === this.scene.getEngine().getRenderingCanvas();
+    // Handle pointer lock changes with browser compatibility
+    const pointerLockChangeEvent = [
+      'pointerlockchange',
+      'mozpointerlockchange',
+      'webkitpointerlockchange'
+    ];
+    
+    // Add event listeners for all possible pointer lock change events
+    pointerLockChangeEvent.forEach(eventName => {
+      document.addEventListener(eventName, () => {
+        const canvas = this.scene.getEngine().getRenderingCanvas();
+        const pointerLockElement = document.pointerLockElement || 
+                                 (document as any).mozPointerLockElement || 
+                                 (document as any).webkitPointerLockElement;
+        
+        this.isPointerLocked = pointerLockElement === canvas;
+        console.log('Pointer lock state changed:', this.isPointerLocked ? 'locked' : 'unlocked');
+        
+        // Update camera controls based on pointer lock state
+        if (this.isPointerLocked) {
+          this.camera.detachControl();
+          this.camera.attachControl(canvas, true);
+        }
+      });
     });
   }
   
@@ -269,6 +299,10 @@ export class PlayerController {
     if (pointerInfo.event.button === 0) {
       const canvas = this.scene.getEngine().getRenderingCanvas();
       if (canvas && !this.isPointerLocked) {
+        console.log('Requesting pointer lock...');
+        canvas.requestPointerLock = canvas.requestPointerLock || 
+                                   (canvas as any).mozRequestPointerLock || 
+                                   (canvas as any).webkitRequestPointerLock;
         canvas.requestPointerLock();
       }
     }

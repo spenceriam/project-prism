@@ -17,6 +17,8 @@ This document tracks the current development priorities and tasks for Project Pr
 - [x] Implement collision detection with environment
 - [x] Add player state management (health, status)
 - [x] Create player input manager for keyboard/mouse
+- [x] Fix pointer lock implementation for mouse look control
+- [x] Improve cross-browser compatibility for input handling
 
 ### Weapon System
 - [x] Design base weapon class architecture
