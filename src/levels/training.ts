@@ -349,6 +349,15 @@ export class TrainingFacility extends Environment {
       // Add environmental props
       await this.createEnvironmentalProps();
       
+      // Add collision meshes for environment objects
+      this.createCollisionMeshes();
+      
+      // Set up level-specific gameplay mechanics
+      this.setupGameplayMechanics();
+      
+      // Apply optimization settings
+      this.applyOptimizationSettings();
+      
       this.isLoaded = true;
       console.log('Training Facility environment loaded successfully');
     } catch (error) {
@@ -731,12 +740,355 @@ export class TrainingFacility extends Environment {
   }
 
   /**
+   * Create collision meshes for environment objects
+   */
+  private createCollisionMeshes(): void {
+    console.log('Creating collision meshes for Training Facility...');
+    
+    // Create collision for floor
+    this.collisionSystem.createCollisionBox(
+      'floor_collision',
+      new Vector3(0, -0.5, 0),
+      new Vector3(40, 1, 40),
+      { type: CollisionType.STATIC, friction: 0.5 }
+    );
+    
+    // Create collision for walls
+    // North wall
+    this.collisionSystem.createCollisionBox(
+      'north_wall_collision',
+      new Vector3(0, 5, 20),
+      new Vector3(40, 10, 1),
+      { type: CollisionType.STATIC }
+    );
+    
+    // South wall
+    this.collisionSystem.createCollisionBox(
+      'south_wall_collision',
+      new Vector3(0, 5, -20),
+      new Vector3(40, 10, 1),
+      { type: CollisionType.STATIC }
+    );
+    
+    // East wall
+    this.collisionSystem.createCollisionBox(
+      'east_wall_collision',
+      new Vector3(20, 5, 0),
+      new Vector3(1, 10, 40),
+      { type: CollisionType.STATIC }
+    );
+    
+    // West wall
+    this.collisionSystem.createCollisionBox(
+      'west_wall_collision',
+      new Vector3(-20, 5, 0),
+      new Vector3(1, 10, 40),
+      { type: CollisionType.STATIC }
+    );
+    
+    // Create collision for tables
+    for (let i = 1; i <= 3; i++) {
+      const table = this.props.get(`table_${i}`);
+      if (table) {
+        this.collisionSystem.createCollisionMesh(table, {
+          type: CollisionType.STATIC,
+          friction: 0.3
+        });
+      }
+    }
+    
+    // Create collision for weapon racks
+    for (let i = 1; i <= 2; i++) {
+      const rack = this.props.get(`rack_${i}`);
+      if (rack) {
+        this.collisionSystem.createCollisionMesh(rack, {
+          type: CollisionType.STATIC
+        });
+      }
+    }
+    
+    // Create collision for barriers
+    for (let i = 1; i <= 3; i++) {
+      const barrier = this.props.get(`barrier_${i}`);
+      if (barrier) {
+        this.collisionSystem.createCollisionMesh(barrier, {
+          type: CollisionType.STATIC
+        });
+      }
+    }
+    
+    // Create trigger zones for training areas
+    this.createTrainingZoneTriggers();
+    
+    console.log('Collision meshes created successfully');
+  }
+  
+  /**
+   * Create trigger zones for different training areas
+   */
+  private createTrainingZoneTriggers(): void {
+    // Target practice zone
+    this.collisionSystem.createCollisionBox(
+      'target_practice_zone',
+      new Vector3(15, 2, 12),
+      new Vector3(8, 4, 8),
+      { type: CollisionType.TRIGGER, visible: false }
+    );
+    
+    // Movement training zone
+    this.collisionSystem.createCollisionBox(
+      'movement_training_zone',
+      new Vector3(0, 2, 0),
+      new Vector3(15, 4, 15),
+      { type: CollisionType.TRIGGER, visible: false }
+    );
+    
+    // Weapon training zone
+    this.collisionSystem.createCollisionBox(
+      'weapon_training_zone',
+      new Vector3(-15, 2, 12),
+      new Vector3(8, 4, 8),
+      { type: CollisionType.TRIGGER, visible: false }
+    );
+  }
+  
+  /**
+   * Set up level-specific gameplay mechanics
+   */
+  private setupGameplayMechanics(): void {
+    console.log('Setting up Training Facility gameplay mechanics...');
+    
+    // Register interactive elements with the interactive system
+    this.registerInteractiveElements();
+    
+    // Set up shooting range mechanics
+    this.setupShootingRange();
+    
+    // Set up movement course mechanics
+    this.setupMovementCourse();
+    
+    // Set up weapon training mechanics
+    this.setupWeaponTraining();
+    
+    console.log('Gameplay mechanics set up successfully');
+  }
+  
+  /**
+   * Register interactive elements with the interactive system
+   */
+  private registerInteractiveElements(): void {
+    // Register targets as interactive elements
+    for (let i = 1; i <= 5; i++) {
+      const targetMesh = this.interactiveElements.get(`target_${i}`);
+      if (targetMesh) {
+        const targetId = `target_${i}`;
+        this.interactiveSystem.registerInteractive(targetMesh, {
+          type: InteractiveType.TARGET,
+          initialState: InteractiveState.IDLE,
+          respawnTime: 5000 // 5 seconds
+        });
+        
+        // Store the mapping between mesh name and interactive ID
+        this.interactiveIds.set(`target_${i}`, targetId);
+      }
+    }
+    
+    // Register buttons as interactive elements
+    for (let i = 1; i <= 3; i++) {
+      const buttonMesh = this.interactiveElements.get(`button_${i}`);
+      if (buttonMesh) {
+        const buttonId = `button_${i}`;
+        this.interactiveSystem.registerInteractive(buttonMesh, {
+          type: InteractiveType.BUTTON,
+          initialState: InteractiveState.IDLE,
+          cooldownTime: 2000 // 2 seconds
+        });
+        
+        // Store the mapping between mesh name and interactive ID
+        this.interactiveIds.set(`button_${i}`, buttonId);
+      }
+    }
+  }
+  
+  /**
+   * Set up shooting range mechanics
+   */
+  private setupShootingRange(): void {
+    // Initially hide all targets
+    for (let i = 1; i <= 5; i++) {
+      const targetMesh = this.interactiveElements.get(`target_${i}`);
+      if (targetMesh) {
+        targetMesh.isVisible = false;
+      }
+    }
+    
+    // Add hit detection for targets
+    this.interactiveSystem.onInteractionObservable.add((event: InteractionEvent) => {
+      if (event.type === InteractiveType.TARGET && event.state === InteractiveState.ACTIVE) {
+        // Create impact effect at hit position
+        this.effectsSystem.createImpactEffect(event.position);
+        
+        // Play hit sound
+        // TODO: Add sound system integration
+        
+        // Hide target after hit
+        const targetMesh = this.interactiveElements.get(event.interactiveId.replace('target_', ''));
+        if (targetMesh) {
+          targetMesh.isVisible = false;
+          
+          // Respawn target after delay
+          setTimeout(() => {
+            if (this.isLoaded) { // Check if environment is still loaded
+              targetMesh.isVisible = true;
+              this.effectsSystem.highlightInteractiveObject(targetMesh, 500);
+            }
+          }, 5000); // 5 seconds
+        }
+      }
+    });
+  }
+  
+  /**
+   * Set up movement course mechanics
+   */
+  private setupMovementCourse(): void {
+    // Create checkpoints for movement course
+    const checkpoints = [
+      new Vector3(5, 0.1, 5),
+      new Vector3(-5, 0.1, 10),
+      new Vector3(0, 0.1, 15),
+      new Vector3(10, 0.1, 10)
+    ];
+    
+    // Create visual markers for checkpoints
+    checkpoints.forEach((position, index) => {
+      const marker = MeshBuilder.CreateCylinder(
+        `checkpoint_${index + 1}`,
+        { height: 0.1, diameter: 2, tessellation: 32 },
+        this.scene
+      );
+      marker.position = position;
+      marker.material = this.materialSystem.createMaterial({
+        name: `checkpoint_${index + 1}_material`,
+        type: 'standard',
+        diffuseColor: new Color3(0, 0.8, 0.8),
+        emissiveColor: new Color3(0, 0.4, 0.4)
+      });
+      marker.parent = this.rootNode;
+      
+      // Add to interactive elements map
+      this.interactiveElements.set(`checkpoint_${index + 1}`, marker);
+      
+      // Register as pickup (since TRIGGER_AREA doesn't exist in the enum)
+      this.interactiveSystem.registerInteractive(marker, {
+        type: InteractiveType.PICKUP,
+        initialState: InteractiveState.IDLE,
+        interactionDistance: 2
+      });
+    });
+  }
+  
+  /**
+   * Set up weapon training mechanics
+   */
+  private setupWeaponTraining(): void {
+    // Create weapon pickup points
+    const weaponPositions = [
+      { name: 'pistol', position: new Vector3(-15, 1.5, 8) },
+      { name: 'rifle', position: new Vector3(-15, 1.5, 12) },
+      { name: 'shotgun', position: new Vector3(-15, 1.5, 16) }
+    ];
+    
+    // Create visual markers for weapon pickups
+    weaponPositions.forEach(({ name, position }) => {
+      const marker = MeshBuilder.CreateBox(
+        `weapon_${name}`,
+        { width: 0.5, height: 0.5, depth: 0.5 },
+        this.scene
+      );
+      marker.position = position;
+      marker.material = this.materialSystem.createMaterial({
+        name: `weapon_${name}_material`,
+        type: 'standard',
+        diffuseColor: new Color3(0.8, 0.8, 0),
+        emissiveColor: new Color3(0.4, 0.4, 0)
+      });
+      marker.parent = this.rootNode;
+      
+      // Add to interactive elements map
+      this.interactiveElements.set(`weapon_${name}`, marker);
+      
+      // Register as pickup
+      this.interactiveSystem.registerInteractive(marker, {
+        type: InteractiveType.PICKUP,
+        initialState: InteractiveState.ACTIVE,
+        respawnTime: 10000 // 10 seconds
+      });
+      
+      // Add rotation animation
+      const rotationAnimation = new Animation(
+        `weapon_${name}_rotation`,
+        'rotation.y',
+        30,
+        Animation.ANIMATIONTYPE_FLOAT,
+        Animation.ANIMATIONLOOPMODE_CYCLE
+      );
+      
+      const keyFrames = [];
+      keyFrames.push({ frame: 0, value: 0 });
+      keyFrames.push({ frame: 100, value: Math.PI * 2 });
+      rotationAnimation.setKeys(keyFrames);
+      
+      marker.animations = [rotationAnimation];
+      this.scene.beginAnimation(marker, 0, 100, true);
+    });
+  }
+  
+  /**
+   * Apply optimization settings for the environment
+   */
+  private applyOptimizationSettings(): void {
+    console.log('Applying optimization settings for Training Facility...');
+    
+    // Configure optimization settings
+    const optimizationSettings: OptimizationSettings = {
+      enableInstancing: true,
+      enableLOD: true,
+      enableMeshMerging: true,
+      enableOcclusion: true,
+      enableFrustumCulling: true
+    };
+    
+    // Apply optimization settings
+    this.optimizationSystem.updateSettings(optimizationSettings);
+    
+    // Mark static objects as occludable
+    this.props.forEach(prop => {
+      this.optimizationSystem.markAsOccludable(prop);
+    });
+    
+    // Create LOD for complex meshes
+    // (Simplified for now due to TypeScript errors)
+    
+    console.log('Optimization settings applied successfully');
+  }
+
+  /**
    * Dispose of the environment and all its resources
    */
   public override dispose(): void {
     this.lightingSystem.dispose();
     this.materialSystem.disposeAll();
+    // Note: CollisionSystem doesn't have a dispose method, but we should clean up resources
+    // this.collisionSystem.dispose();
+    
+    // Note: EffectsSystem doesn't have a dispose method, but we should clean up resources
+    // this.effectsSystem.dispose();
+    
+    this.interactiveSystem.dispose();
+    this.optimizationSystem.dispose();
     this.interactiveElements.clear();
+    this.interactiveIds.clear();
     super.dispose();
   }
 }
