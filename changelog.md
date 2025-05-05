@@ -7,12 +7,22 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 ## [Unreleased]
 
 ### Added
-- Completed Training Facility environment implementation
+- Completed Training Facility environment implementation (2025-05-03)
   - Added collision meshes for all environment objects
   - Implemented level-specific gameplay mechanics (shooting range, movement course, weapon training)
   - Added visual effects for interactive elements
   - Integrated with player controller for proper interaction
   - Optimized environment for browser performance
+
+## [0.2.0] - 2025-05-05
+
+### Added
+- Implemented comprehensive UI system
+  - Created UIManager for centralized UI management
+  - Implemented HUD with health, ammo, and objective displays
+  - Designed interactive menu system with main menu, pause menu, options, about, and game over screens
+  - Added visual feedback for player damage and hit indicators
+  - Created notification and dialog system for in-game messages
 
 ### Fixed
 - Fixed player controller implementation issues:
@@ -28,7 +38,17 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - Fixed Babylon.js Inspector error by adding proper module imports
 - Fixed webpack configuration to handle missing assets gracefully
 
+## [0.1.0] - 2025-05-03
+
 ### Added
+- Project initialization
+- Basic project structure with webpack configuration
+- Development environment setup
+- Initial Babylon.js scene implementation
+- Simple test environment for rendering performance
+- Basic camera controls test
+- GitHub repository setup
+- Documentation templates
 - Initial project documentation
 - Product Requirements Document (PRD) with full game specifications
 - Project structure and architecture design
@@ -42,18 +62,6 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
   - Physics Optimization for efficient calculations
   - Performance Manager to coordinate all optimization systems
   - Auto-quality adjustment based on performance metrics
-
-## [0.1.0] - 2025-05-03
-
-### Added
-- Project initialization
-- Basic project structure with webpack configuration
-- Development environment setup
-- Initial Babylon.js scene implementation
-- Simple test environment for rendering performance
-- Basic camera controls test
-- GitHub repository setup
-- Documentation templates
 - Implemented core engine setup with Babylon.js
 - Created asset loading pipeline for glTF models with progress tracking
 - Implemented player controller with physics-based movement

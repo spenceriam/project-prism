@@ -2,6 +2,7 @@ import { GameEngine } from './core/engine';
 import { AssetLoader } from './utils/loader';
 import { LevelManager, LevelType } from './core/level-manager';
 import { PlayerController } from './components/player/playerController';
+import { UIManager } from './ui/ui-manager';
 import './styles.css';
 
 /**
@@ -13,9 +14,11 @@ class PrismGame {
   private assetLoader: AssetLoader;
   private levelManager: LevelManager;
   private playerController: PlayerController | null = null;
+  private uiManager: UIManager;
   private loadingScreen: HTMLElement | null;
   private loadingProgress: HTMLElement | null;
   private isDebug: boolean;
+  private gameStarted: boolean = false;
 
   /**
    * Initialize the game
@@ -38,6 +41,10 @@ class PrismGame {
     
     // Initialize level manager
     this.levelManager = new LevelManager(this.engine.getScene(), this.assetLoader);
+    
+    // Initialize UI manager
+    this.uiManager = new UIManager(this.engine.getScene(), this.engine.getEngine());
+    this.uiManager.initialize();
     
     // Set up global loading progress tracking
     this.assetLoader.setGlobalProgressCallback(this.updateLoadingProgress.bind(this));
@@ -62,7 +69,7 @@ class PrismGame {
   }
   
   /**
-   * Hide the loading screen
+   * Hide the loading screen and show the main menu
    */
   private hideLoadingScreen(): void {
     if (this.loadingScreen) {
@@ -70,6 +77,11 @@ class PrismGame {
       setTimeout(() => {
         if (this.loadingScreen) {
           this.loadingScreen.style.display = 'none';
+          
+          // Show main menu if game hasn't started yet
+          if (!this.gameStarted) {
+            this.uiManager.showMainMenu();
+          }
         }
       }, 500);
     }
@@ -80,11 +92,11 @@ class PrismGame {
    */
   public async start(): Promise<void> {
     try {
-      // Add click handler to request pointer lock
+      // Add click handler to request pointer lock only when game is active
       const canvas = this.engine.getCanvas();
       canvas.addEventListener('click', () => {
-        // Request pointer lock on canvas click if not already locked
-        if (document.pointerLockElement !== canvas) {
+        // Only request pointer lock if game has started and we're not in a menu
+        if (this.gameStarted && !this.uiManager.isMenuActive() && document.pointerLockElement !== canvas) {
           console.log('Canvas clicked, requesting pointer lock');
           canvas.requestPointerLock = canvas.requestPointerLock || 
                                      (canvas as any).mozRequestPointerLock || 
@@ -132,13 +144,26 @@ class PrismGame {
             this.playerController.teleport(spawnPosition);
           }
           
+          // Set up UI manager with player controller
+          this.uiManager.setPlayerController(this.playerController);
+          
           // Hide loading screen when level is ready
           this.hideLoadingScreen();
         }
       });
       
-      // Load the Training Facility level
+      // Load the Training Facility level in the background
+      // We'll start the actual gameplay when the user clicks Play
       await this.levelManager.loadLevel(LevelType.TRAINING);
+      
+      // Set up UI event handlers
+      this.uiManager.onStartGame = () => {
+        this.startGameplay();
+      };
+      
+      this.uiManager.onQuitGame = () => {
+        window.close();
+      };
       
       console.log('Project Prism Protocol initialized successfully');
     } catch (error) {
@@ -155,12 +180,38 @@ class PrismGame {
   }
   
   /**
+   * Start the actual gameplay
+   */
+  private startGameplay(): void {
+    this.gameStarted = true;
+    
+    // Show the HUD
+    this.uiManager.startGame();
+    
+    // Enable player controller
+    if (this.playerController) {
+      this.playerController.enable();
+      
+      // Request pointer lock for immersive gameplay
+      const canvas = this.engine.getCanvas();
+      canvas.requestPointerLock = canvas.requestPointerLock || 
+                                (canvas as any).mozRequestPointerLock || 
+                                (canvas as any).webkitRequestPointerLock;
+      canvas.requestPointerLock();
+    }
+  }
+  
+  /**
    * Dispose of the game and all its resources
    */
   public dispose(): void {
     if (this.playerController) {
       this.playerController.dispose();
       this.playerController = null;
+    }
+    
+    if (this.uiManager) {
+      this.uiManager.dispose();
     }
     
     if (this.levelManager) {

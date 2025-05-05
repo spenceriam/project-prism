@@ -64,6 +64,10 @@ This document tracks the current development priorities and tasks for Project Pr
 - [x] Implement objective tracking display
 - [x] Add visual feedback for player damage
 - [x] Create weapon selection UI
+- [ ] Fix TypeScript errors in UI components
+- [ ] Implement missing PlayerController methods for UI integration
+- [ ] Ensure proper menu transitions and callbacks
+- [ ] Test UI system with gameplay integration
 
 ### Audio System
 - [x] Set up spatial audio engine
@@ -106,4 +110,4 @@ This document tracks the current development priorities and tasks for Project Pr
 - Focus on browser performance optimization for all implemented features
 - Test regularly on various hardware specifications
 - Maintain compatibility with all modern browsers
-- Next focus areas: Enemy AI implementation and Training Facility environment
+- Next focus areas: Complete UI system implementation and fix remaining TypeScript errors

@@ -5,6 +5,7 @@
  * - Main menu
  * - Pause menu
  * - Options menu
+ * - About screen
  * - Game over screen
  */
 
@@ -23,10 +24,17 @@ export class MenuSystem {
   private mainMenuContainer: GUI.Container;
   private pauseMenuContainer: GUI.Container;
   private optionsMenuContainer: GUI.Container;
+  private aboutScreenContainer: GUI.Container;
   private gameOverContainer: GUI.Container;
   
   // Menu state
   private activeMenu: string = "";
+  
+  // Callback functions
+  private startGameCallback: (() => void) | null = null;
+  private optionsCallback: (() => void) | null = null;
+  private aboutCallback: (() => void) | null = null;
+  private quitGameCallback: (() => void) | null = null;
   
   constructor(advancedTexture: GUI.AdvancedDynamicTexture, scene: BABYLON.Scene, uiManager: UIManager) {
     this.advancedTexture = advancedTexture;
@@ -48,6 +56,7 @@ export class MenuSystem {
     this.createMainMenu();
     this.createPauseMenu();
     this.createOptionsMenu();
+    this.createAboutScreen();
     this.createGameOverScreen();
     
     // Hide all menus initially
@@ -112,21 +121,41 @@ export class MenuSystem {
     
     // Start Game button
     const startButton = this.createMenuButton("startButton", "START GAME", () => {
-      this.uiManager.startGame();
+      if (this.startGameCallback) {
+        this.startGameCallback();
+      } else {
+        this.uiManager.startGame();
+      }
     });
     menuButtonsPanel.addControl(startButton);
     
     // Options button
     const optionsButton = this.createMenuButton("optionsButton", "OPTIONS", () => {
-      this.showOptionsMenu();
+      if (this.optionsCallback) {
+        this.optionsCallback();
+      } else {
+        this.showOptionsMenu();
+      }
     });
     menuButtonsPanel.addControl(optionsButton);
     
-    // Credits button
-    const creditsButton = this.createMenuButton("creditsButton", "CREDITS", () => {
-      // TODO: Show credits screen
+    // About button
+    const aboutButton = this.createMenuButton("aboutButton", "ABOUT", () => {
+      if (this.aboutCallback) {
+        this.aboutCallback();
+      } else {
+        this.showAboutScreen();
+      }
     });
-    menuButtonsPanel.addControl(creditsButton);
+    menuButtonsPanel.addControl(aboutButton);
+    
+    // Quit button
+    const quitButton = this.createMenuButton("quitButton", "QUIT", () => {
+      if (this.quitGameCallback) {
+        this.quitGameCallback();
+      }
+    });
+    menuButtonsPanel.addControl(quitButton);
     
     // Version info
     const versionText = new GUI.TextBlock("versionText");
@@ -227,108 +256,133 @@ export class MenuSystem {
     optionsTitle.fontSize = 36;
     optionsTitle.horizontalAlignment = GUI.Control.HORIZONTAL_ALIGNMENT_CENTER;
     optionsTitle.verticalAlignment = GUI.Control.VERTICAL_ALIGNMENT_TOP;
-    optionsTitle.top = 60;
+    optionsTitle.top = 100;
     this.optionsMenuContainer.addControl(optionsTitle);
     
     // Options panel
     const optionsPanel = new GUI.StackPanel("optionsPanel");
-    optionsPanel.width = "500px";
+    optionsPanel.width = "400px";
     optionsPanel.height = "auto";
     optionsPanel.horizontalAlignment = GUI.Control.HORIZONTAL_ALIGNMENT_CENTER;
     optionsPanel.verticalAlignment = GUI.Control.VERTICAL_ALIGNMENT_CENTER;
     optionsPanel.spacing = 20;
     this.optionsMenuContainer.addControl(optionsPanel);
     
-    // Mouse sensitivity option
-    const sensitivityPanel = new GUI.StackPanel("sensitivityPanel");
-    sensitivityPanel.width = 1;
-    sensitivityPanel.height = "80px";
-    sensitivityPanel.spacing = 10;
-    optionsPanel.addControl(sensitivityPanel);
-    
-    const sensitivityLabel = new GUI.TextBlock("sensitivityLabel");
-    sensitivityLabel.text = "MOUSE SENSITIVITY";
-    sensitivityLabel.height = "20px";
-    sensitivityLabel.color = "white";
-    sensitivityLabel.fontFamily = "monospace";
-    sensitivityLabel.fontSize = 16;
-    sensitivityLabel.textHorizontalAlignment = GUI.Control.HORIZONTAL_ALIGNMENT_LEFT;
-    sensitivityPanel.addControl(sensitivityLabel);
+    // Mouse sensitivity slider
+    const sensitivityHeader = new GUI.TextBlock("sensitivityHeader");
+    sensitivityHeader.text = "MOUSE SENSITIVITY";
+    sensitivityHeader.height = "30px";
+    sensitivityHeader.color = "white";
+    sensitivityHeader.fontFamily = "monospace";
+    sensitivityHeader.fontSize = 18;
+    sensitivityHeader.textHorizontalAlignment = GUI.Control.HORIZONTAL_ALIGNMENT_LEFT;
+    optionsPanel.addControl(sensitivityHeader);
     
     const sensitivitySlider = new GUI.Slider("sensitivitySlider");
     sensitivitySlider.minimum = 0.1;
-    sensitivitySlider.maximum = 2.0;
-    sensitivitySlider.value = 1.0;
+    sensitivitySlider.maximum = 1.0;
+    sensitivitySlider.value = 0.5;
     sensitivitySlider.height = "20px";
-    sensitivitySlider.width = 1;
+    sensitivitySlider.width = "100%";
     sensitivitySlider.color = "#3498db";
-    sensitivitySlider.background = "#bdc3c7";
-    sensitivitySlider.onValueChangedObservable.add((value: number) => {
-      sensitivityValue.text = value.toFixed(2);
-      // TODO: Apply sensitivity change
+    sensitivitySlider.background = "#2c3e50";
+    sensitivitySlider.onValueChangedObservable.add((value) => {
+      // TODO: Update sensitivity value
     });
-    sensitivityPanel.addControl(sensitivitySlider);
+    optionsPanel.addControl(sensitivitySlider);
     
-    const sensitivityValue = new GUI.TextBlock("sensitivityValue");
-    sensitivityValue.text = "1.00";
-    sensitivityValue.height = "20px";
-    sensitivityValue.color = "#3498db";
-    sensitivityValue.fontFamily = "monospace";
-    sensitivityValue.fontSize = 16;
-    sensitivityValue.textHorizontalAlignment = GUI.Control.HORIZONTAL_ALIGNMENT_RIGHT;
-    sensitivityPanel.addControl(sensitivityValue);
-    
-    // Volume option
-    const volumePanel = new GUI.StackPanel("volumePanel");
-    volumePanel.width = 1;
-    volumePanel.height = "80px";
-    volumePanel.spacing = 10;
-    optionsPanel.addControl(volumePanel);
-    
-    const volumeLabel = new GUI.TextBlock("volumeLabel");
-    volumeLabel.text = "MASTER VOLUME";
-    volumeLabel.height = "20px";
-    volumeLabel.color = "white";
-    volumeLabel.fontFamily = "monospace";
-    volumeLabel.fontSize = 16;
-    volumeLabel.textHorizontalAlignment = GUI.Control.HORIZONTAL_ALIGNMENT_LEFT;
-    volumePanel.addControl(volumeLabel);
+    // Volume slider
+    const volumeHeader = new GUI.TextBlock("volumeHeader");
+    volumeHeader.text = "MASTER VOLUME";
+    volumeHeader.height = "30px";
+    volumeHeader.color = "white";
+    volumeHeader.fontFamily = "monospace";
+    volumeHeader.fontSize = 18;
+    volumeHeader.textHorizontalAlignment = GUI.Control.HORIZONTAL_ALIGNMENT_LEFT;
+    optionsPanel.addControl(volumeHeader);
     
     const volumeSlider = new GUI.Slider("volumeSlider");
     volumeSlider.minimum = 0;
     volumeSlider.maximum = 1.0;
     volumeSlider.value = 0.7;
     volumeSlider.height = "20px";
-    volumeSlider.width = 1;
+    volumeSlider.width = "100%";
     volumeSlider.color = "#3498db";
-    volumeSlider.background = "#bdc3c7";
-    volumeSlider.onValueChangedObservable.add((value: number) => {
-      volumeValue.text = Math.round(value * 100) + "%";
-      // TODO: Apply volume change
+    volumeSlider.background = "#2c3e50";
+    volumeSlider.onValueChangedObservable.add((value) => {
+      // TODO: Update volume value
     });
-    volumePanel.addControl(volumeSlider);
-    
-    const volumeValue = new GUI.TextBlock("volumeValue");
-    volumeValue.text = "70%";
-    volumeValue.height = "20px";
-    volumeValue.color = "#3498db";
-    volumeValue.fontFamily = "monospace";
-    volumeValue.fontSize = 16;
-    volumeValue.textHorizontalAlignment = GUI.Control.HORIZONTAL_ALIGNMENT_RIGHT;
-    volumePanel.addControl(volumeValue);
+    optionsPanel.addControl(volumeSlider);
     
     // Back button
-    const backButton = this.createMenuButton("optionsBackButton", "BACK", () => {
-      if (this.activeMenu === "mainMenu") {
-        this.showMainMenu();
-      } else if (this.activeMenu === "pauseMenu") {
+    const backButton = this.createMenuButton("backFromOptionsButton", "BACK", () => {
+      if (this.activeMenu === "pauseMenu") {
         this.showPauseMenu();
+      } else {
+        this.showMainMenu();
       }
     });
-    backButton.horizontalAlignment = GUI.Control.HORIZONTAL_ALIGNMENT_CENTER;
-    backButton.verticalAlignment = GUI.Control.VERTICAL_ALIGNMENT_BOTTOM;
-    backButton.top = -60;
-    this.optionsMenuContainer.addControl(backButton);
+    optionsPanel.addControl(backButton);
+  }
+  
+  /**
+   * Create About screen
+   */
+  private createAboutScreen(): void {
+    // Create about screen container
+    this.aboutScreenContainer = new GUI.Container("aboutScreenContainer");
+    this.aboutScreenContainer.width = 1;
+    this.aboutScreenContainer.height = 1;
+    this.menuContainer.addControl(this.aboutScreenContainer);
+    
+    // Semi-transparent background
+    const background = new GUI.Rectangle("aboutScreenBackground");
+    background.width = 1;
+    background.height = 1;
+    background.background = "rgba(0, 0, 0, 0.7)";
+    background.thickness = 0;
+    this.aboutScreenContainer.addControl(background);
+    
+    // About title
+    const aboutTitle = new GUI.TextBlock("aboutTitle");
+    aboutTitle.text = "ABOUT PROJECT PRISM PROTOCOL";
+    aboutTitle.height = "60px";
+    aboutTitle.color = "white";
+    aboutTitle.fontFamily = "monospace";
+    aboutTitle.fontSize = 36;
+    aboutTitle.horizontalAlignment = GUI.Control.HORIZONTAL_ALIGNMENT_CENTER;
+    aboutTitle.verticalAlignment = GUI.Control.VERTICAL_ALIGNMENT_TOP;
+    aboutTitle.top = 100;
+    this.aboutScreenContainer.addControl(aboutTitle);
+    
+    // About content panel
+    const aboutContentPanel = new GUI.StackPanel("aboutContentPanel");
+    aboutContentPanel.width = "600px";
+    aboutContentPanel.height = "auto";
+    aboutContentPanel.horizontalAlignment = GUI.Control.HORIZONTAL_ALIGNMENT_CENTER;
+    aboutContentPanel.verticalAlignment = GUI.Control.VERTICAL_ALIGNMENT_CENTER;
+    aboutContentPanel.spacing = 20;
+    this.aboutScreenContainer.addControl(aboutContentPanel);
+    
+    // About content
+    const aboutContent = new GUI.TextBlock("aboutContent");
+    aboutContent.text = "Project Prism Protocol is a browser-based FPS game inspired by GoldenEye 64, built using Babylon.js.\n\n" +
+                        "This game features a spy protagonist navigating through office spaces, prisons, facilities, and enemy bases.\n\n" +
+                        "Developed by Spencer Francisco, May 2025.\n\n" +
+                        "Built with Babylon.js, TypeScript, and WebGL.";
+    aboutContent.height = "200px";
+    aboutContent.color = "white";
+    aboutContent.fontFamily = "monospace";
+    aboutContent.fontSize = 18;
+    aboutContent.textWrapping = true;
+    aboutContent.textHorizontalAlignment = GUI.Control.HORIZONTAL_ALIGNMENT_CENTER;
+    aboutContentPanel.addControl(aboutContent);
+    
+    // Back button
+    const backButton = this.createMenuButton("backFromAboutButton", "BACK", () => {
+      this.showMainMenu();
+    });
+    aboutContentPanel.addControl(backButton);
   }
   
   /**
@@ -475,6 +529,16 @@ export class MenuSystem {
   public showOptionsMenu(): void {
     this.hideAllMenus();
     this.optionsMenuContainer.isVisible = true;
+    this.activeMenu = "options";
+  }
+  
+  /**
+   * Show the about screen
+   */
+  public showAboutScreen(): void {
+    this.hideAllMenus();
+    this.aboutScreenContainer.isVisible = true;
+    this.activeMenu = "about";
   }
   
   /**
@@ -493,6 +557,7 @@ export class MenuSystem {
     this.mainMenuContainer.isVisible = false;
     this.pauseMenuContainer.isVisible = false;
     this.optionsMenuContainer.isVisible = false;
+    this.aboutScreenContainer.isVisible = false;
     this.gameOverContainer.isVisible = false;
   }
   
@@ -511,9 +576,44 @@ export class MenuSystem {
   }
   
   /**
-   * Clean up menu resources
+   * Set callback for Start Game button
+   */
+  public setStartGameCallback(callback: () => void): void {
+    this.startGameCallback = callback;
+  }
+  
+  /**
+   * Set callback for Options button
+   */
+  public setOptionsCallback(callback: () => void): void {
+    this.optionsCallback = callback;
+  }
+  
+  /**
+   * Set callback for About button
+   */
+  public setAboutCallback(callback: () => void): void {
+    this.aboutCallback = callback;
+  }
+  
+  /**
+   * Set callback for Quit button
+   */
+  public setQuitGameCallback(callback: () => void): void {
+    this.quitGameCallback = callback;
+  }
+  
+  /**
+   * Dispose of menu resources
    */
   public dispose(): void {
+    // Clear callbacks
+    this.startGameCallback = null;
+    this.optionsCallback = null;
+    this.aboutCallback = null;
+    this.quitGameCallback = null;
+    
+    // Clean up resources
     this.menuContainer.dispose();
   }
 }

@@ -11,6 +11,7 @@ import { gsap } from 'gsap';
 import { HUD } from './hud';
 import { MenuSystem } from './menus';
 import { DialogSystem } from './dialogs';
+import { PlayerController } from '../components/player/playerController';
 
 export class UIManager {
   private scene: BABYLON.Scene;
@@ -28,6 +29,13 @@ export class UIManager {
   // UI State
   private isMenuActive: boolean = false;
   private isGamePaused: boolean = false;
+  
+  // Player reference
+  private playerController: PlayerController | null = null;
+  
+  // Event callbacks
+  public onStartGame: (() => void) | null = null;
+  public onQuitGame: (() => void) | null = null;
   
   constructor(scene: BABYLON.Scene, engine: BABYLON.Engine) {
     this.scene = scene;
@@ -127,6 +135,33 @@ export class UIManager {
     this.isMenuActive = true;
     this.menuSystem.showMainMenu();
     this.hud.hide();
+    
+    // Set up menu callbacks
+    this.menuSystem.setStartGameCallback(() => {
+      if (this.onStartGame) {
+        this.onStartGame();
+      }
+    });
+    
+    this.menuSystem.setQuitGameCallback(() => {
+      if (this.onQuitGame) {
+        this.onQuitGame();
+      }
+    });
+  }
+  
+  /**
+   * Check if a menu is currently active
+   */
+  public isMenuActive(): boolean {
+    return this.isMenuActive;
+  }
+  
+  /**
+   * Set the player controller reference
+   */
+  public setPlayerController(playerController: PlayerController): void {
+    this.playerController = playerController;
   }
   
   /**
@@ -199,6 +234,11 @@ export class UIManager {
     this.hud.dispose();
     this.menuSystem.dispose();
     this.dialogSystem.dispose();
+    
+    // Clear callbacks
+    this.onStartGame = null;
+    this.onQuitGame = null;
+    this.playerController = null;
     this.advancedTexture.dispose();
   }
 }
