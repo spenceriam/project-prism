@@ -573,4 +573,29 @@ export class PlayerController {
       this.rayHelper.dispose();
     }
   }
+  
+  /**
+   * Enables the player controller
+   * Activates input handling and physics
+   */
+  public enable(): void {
+    // Re-attach camera controls
+    const canvas = this.scene.getEngine().getRenderingCanvas();
+    if (canvas) {
+      this.camera.attachControl(canvas, true);
+    }
+    
+    // Set up input handling
+    this.setupInputHandlers();
+    
+    // Ensure physics is enabled
+    if (this.playerCollider.physicsImpostor) {
+      this.playerCollider.physicsImpostor.wakeUp();
+    }
+    
+    // Add to update loop if not already added
+    if (!this.scene.onBeforeRenderObservable.hasObservers()) {
+      this.scene.onBeforeRenderObservable.add(() => this.update());
+    }
+  }
 }

@@ -22,6 +22,11 @@ export class DialogSystem {
   private messageContainer: GUI.Rectangle;
   private messageText: GUI.TextBlock;
   
+  // Tutorial container
+  private tutorialContainer: GUI.Rectangle;
+  private tutorialHeader: GUI.TextBlock;
+  private tutorialText: GUI.TextBlock;
+  
   // Active notifications
   private activeNotifications: {
     control: GUI.Control;
@@ -48,6 +53,9 @@ export class DialogSystem {
     
     // Create message container
     this.createMessageContainer();
+    
+    // Create tutorial container
+    this.createTutorialContainer();
   }
   
   /**
@@ -98,6 +106,48 @@ export class DialogSystem {
     this.messageText.textWrapping = true;
     this.messageText.textHorizontalAlignment = GUI.Control.HORIZONTAL_ALIGNMENT_CENTER;
     this.messageContainer.addControl(this.messageText);
+  }
+  
+  /**
+   * Create tutorial container for detailed instructions
+   */
+  private createTutorialContainer(): void {
+    // Create tutorial container
+    this.tutorialContainer = new GUI.Rectangle("tutorialContainer");
+    this.tutorialContainer.width = "500px";
+    this.tutorialContainer.height = "auto";
+    this.tutorialContainer.paddingTop = "15px";
+    this.tutorialContainer.paddingBottom = "15px";
+    this.tutorialContainer.paddingLeft = "20px";
+    this.tutorialContainer.paddingRight = "20px";
+    this.tutorialContainer.horizontalAlignment = GUI.Control.HORIZONTAL_ALIGNMENT_CENTER;
+    this.tutorialContainer.verticalAlignment = GUI.Control.VERTICAL_ALIGNMENT_CENTER;
+    this.tutorialContainer.background = "rgba(0, 0, 0, 0.85)";
+    this.tutorialContainer.color = "rgba(255, 255, 255, 0.6)";
+    this.tutorialContainer.thickness = 1;
+    this.tutorialContainer.cornerRadius = 5;
+    this.tutorialContainer.isVisible = false;
+    this.dialogContainer.addControl(this.tutorialContainer);
+    
+    // Tutorial header
+    this.tutorialHeader = new GUI.TextBlock("tutorialHeader");
+    this.tutorialHeader.text = "TUTORIAL";
+    this.tutorialHeader.color = "#3498db";
+    this.tutorialHeader.fontFamily = "monospace";
+    this.tutorialHeader.fontSize = 22;
+    this.tutorialHeader.textHorizontalAlignment = GUI.Control.HORIZONTAL_ALIGNMENT_CENTER;
+    this.tutorialContainer.addControl(this.tutorialHeader);
+    
+    // Tutorial text
+    this.tutorialText = new GUI.TextBlock("tutorialText");
+    this.tutorialText.text = "";
+    this.tutorialText.color = "white";
+    this.tutorialText.fontFamily = "monospace";
+    this.tutorialText.fontSize = 16;
+    this.tutorialText.textWrapping = true;
+    this.tutorialText.textHorizontalAlignment = GUI.Control.HORIZONTAL_ALIGNMENT_LEFT;
+    this.tutorialText.paddingTop = "15px";
+    this.tutorialContainer.addControl(this.tutorialText);
   }
   
   /**
@@ -185,9 +235,10 @@ export class DialogSystem {
   /**
    * Show a centered message
    * @param message Message text
-   * @param duration Duration to show message (in seconds)
+   * @param titleOrDuration Title for the message or duration to show (in seconds)
+   * @param callbackOrDuration Optional callback function or duration (in seconds)
    */
-  public showMessage(message: string, duration: number = 3): void {
+  public showMessage(message: string, titleOrDuration: string | number = 3, callbackOrDuration?: (() => void) | number): void {
     // Update message text
     this.messageText.text = message;
     
@@ -198,20 +249,51 @@ export class DialogSystem {
     gsap.killTweensOf(this.messageContainer);
     gsap.set(this.messageContainer, { alpha: 0, top: 30 });
     
+    // Parse parameters
+    let duration = 3;
+    let callback: (() => void) | undefined = undefined;
+    
+    if (typeof titleOrDuration === 'number') {
+      // First overload: (message, duration)
+      duration = titleOrDuration;
+    } else if (typeof callbackOrDuration === 'number') {
+      // Second overload: (message, title, duration)
+      duration = callbackOrDuration;
+    } else if (typeof callbackOrDuration === 'function') {
+      // Third overload: (message, title, callback)
+      callback = callbackOrDuration;
+    }
+    
     // Animate in
     gsap.to(this.messageContainer, {
       alpha: 1,
       top: 50,
       duration: 0.3,
-      ease: "power2.out"
+      ease: "power2.out",
+      onComplete: () => {
+        // Set timeout to hide message
+        if (duration > 0) {
+          setTimeout(() => {
+            this.hideMessage();
+            // Execute callback after hiding if provided
+            if (callback) {
+              callback();
+            }
+          }, duration * 1000);
+        }
+      }
     });
-    
-    // Animate out after duration
+  }
+  
+  /**
+   * Hide the centered message with animation
+   */
+  public hideMessage(): void {
+    // Animate out
     gsap.to(this.messageContainer, {
       alpha: 0,
       top: 30,
       duration: 0.3,
-      delay: duration,
       ease: "power2.in",
       onComplete: () => {
         this.messageContainer.isVisible = false;
@@ -220,15 +302,16 @@ export class DialogSystem {
   }
   
   /**
-   * Show an objective update
+   * Show an objective update notification
    * @param objective Objective text
-   * @param completed Whether the objective was completed
+   * @param completed Whether the objective is completed
+   * @param duration Duration to show notification (in seconds)
    */
-  public showObjectiveUpdate(objective: string, completed: boolean = false): void {
-    const message = completed ? `Objective Completed: ${objective}` : `New Objective: ${objective}`;
+  public showObjectiveUpdate(objective: string, completed: boolean = false, duration: number = 5): void {
+    const message = completed ? `OBJECTIVE COMPLETE: ${objective}` : `NEW OBJECTIVE: ${objective}`;
     const type = completed ? 'success' : 'info';
     
-    this.showNotification(message, type, 5);
+    this.showNotification(message, type, duration);
   }
   
   /**

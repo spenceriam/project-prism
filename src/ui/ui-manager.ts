@@ -47,9 +47,9 @@ export class UIManager {
     this.advancedTexture.renderScale = 1.0;
     
     // Initialize UI components
-    this.hud = new HUD(this.advancedTexture, scene);
-    this.menuSystem = new MenuSystem(this.advancedTexture, scene, this);
     this.dialogSystem = new DialogSystem(this.advancedTexture, scene);
+    this.hud = new HUD(this.advancedTexture, scene);
+    this.menuSystem = new MenuSystem(this.advancedTexture, scene, this, this.dialogSystem);
     
     // Set up event listeners
     this.setupEventListeners();
@@ -153,7 +153,7 @@ export class UIManager {
   /**
    * Check if a menu is currently active
    */
-  public isMenuActive(): boolean {
+  public checkMenuActive(): boolean {
     return this.isMenuActive;
   }
   

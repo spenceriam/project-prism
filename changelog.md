@@ -7,6 +7,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 ## [Unreleased]
 
 ### Added
+- Created comprehensive UI and menu system documentation (2025-05-06)
+  - Created HUD_menus.md with detailed specifications for all UI components
+  - Documented main menu structure with Play, Settings, About, and Quit options
+  - Specified theme music integration for the main menu
+  - Detailed in-game HUD elements and their functionality
+  - Outlined pause menu design and implementation requirements
+  - Provided technical implementation notes for the UI system
+
 - Implemented simplified primitive model system for Training Facility (2025-05-05)
   - Created SimplePrimitiveGenerator utility for generating geometric primitives
   - Developed TrainingPrimitiveManager for managing primitive models in the scene

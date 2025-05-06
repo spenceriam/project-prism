@@ -96,7 +96,7 @@ class PrismGame {
       const canvas = this.engine.getCanvas();
       canvas.addEventListener('click', () => {
         // Only request pointer lock if game has started and we're not in a menu
-        if (this.gameStarted && !this.uiManager.isMenuActive() && document.pointerLockElement !== canvas) {
+        if (this.gameStarted && !this.uiManager.checkMenuActive() && document.pointerLockElement !== canvas) {
           console.log('Canvas clicked, requesting pointer lock');
           canvas.requestPointerLock = canvas.requestPointerLock || 
                                      (canvas as any).mozRequestPointerLock || 

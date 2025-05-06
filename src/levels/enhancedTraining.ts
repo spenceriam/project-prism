@@ -848,3 +848,4 @@ export class EnhancedTrainingFacility extends Environment {
     // Call parent dispose method
     super.dispose();
   }
+}
