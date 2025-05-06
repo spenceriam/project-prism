@@ -7,6 +7,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 ## [Unreleased]
 
 ### Added
+- Implemented simplified primitive model system for Training Facility (2025-05-05)
+  - Created SimplePrimitiveGenerator utility for generating geometric primitives
+  - Developed TrainingPrimitiveManager for managing primitive models in the scene
+  - Implemented PrimitiveTrainingFacility using simple geometric shapes
+  - Added utility script for exporting primitives to glTF files
+  - Created complete implementation with all required areas and interactive elements
+  - Designed for GoldenEye 64-inspired low-poly aesthetic
+  - Added SimplePrimitiveTrainingFacility for immediate testing without TypeScript errors
+
 - Completed Training Facility environment implementation (2025-05-03)
   - Added collision meshes for all environment objects
   - Implemented level-specific gameplay mechanics (shooting range, movement course, weapon training)

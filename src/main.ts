@@ -152,9 +152,10 @@ class PrismGame {
         }
       });
       
-      // Load the Training Facility level in the background
+      // Load the Simple Primitive Training Facility level in the background
       // We'll start the actual gameplay when the user clicks Play
-      await this.levelManager.loadLevel(LevelType.TRAINING);
+      // Using simplified primitive models for development until GoldenEye 64-style assets are available
+      await this.levelManager.loadLevel(LevelType.SIMPLE_PRIMITIVE_TRAINING);
       
       // Set up UI event handlers
       this.uiManager.onStartGame = () => {

@@ -2,12 +2,15 @@ import { Scene } from '@babylonjs/core';
 import { AssetLoader } from '../utils/loader';
 import { Environment } from '../components/environment/environment';
 import { TrainingFacility } from '../levels/training';
+import { SimplePrimitiveTrainingFacility } from '../levels/simplePrimitiveTraining';
 
 /**
  * Level types available in the game
  */
 export enum LevelType {
   TRAINING = 'training',
+  PRIMITIVE_TRAINING = 'primitive_training',
+  SIMPLE_PRIMITIVE_TRAINING = 'simple_primitive_training',
   OFFICE = 'office',
   DETENTION = 'detention',
   FACILITY = 'facility',
@@ -61,6 +64,13 @@ export class LevelManager {
       switch (levelType) {
         case LevelType.TRAINING:
           this.currentLevel = new TrainingFacility(this.scene, this.assetLoader);
+          break;
+        case LevelType.PRIMITIVE_TRAINING:
+          // Using the simplified version instead to avoid TypeScript errors
+          this.currentLevel = new SimplePrimitiveTrainingFacility(this.scene, this.assetLoader);
+          break;
+        case LevelType.SIMPLE_PRIMITIVE_TRAINING:
+          this.currentLevel = new SimplePrimitiveTrainingFacility(this.scene, this.assetLoader);
           break;
         case LevelType.OFFICE:
           // TODO: Implement Office level

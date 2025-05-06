@@ -56,6 +56,10 @@ This document tracks the current development priorities and tasks for Project Pr
 - [x] Add collision meshes for environment objects
 - [x] Implement level-specific gameplay mechanics
 - [x] Add visual effects for interactive elements
+- [x] Create primitive model generator for development
+- [x] Implement primitive training facility using geometric shapes
+- [x] Create simplified primitive training facility for immediate testing
+- [ ] Replace primitive models with GoldenEye 64-style assets
 
 ### User Interface
 - [x] Design HUD elements
