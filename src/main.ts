@@ -4,6 +4,7 @@ import { LevelManager, LevelType } from './core/level-manager';
 import { PlayerController } from './components/player/playerController';
 import { UIManager } from './ui/ui-manager';
 import './styles.css';
+import "@babylonjs/inspector";
 
 /**
  * Project Prism Protocol - Main Entry Point
@@ -69,21 +70,131 @@ class PrismGame {
   }
   
   /**
-   * Hide the loading screen and show the main menu
+   * Hide the loading screen
    */
   private hideLoadingScreen(): void {
     if (this.loadingScreen) {
-      this.loadingScreen.style.opacity = '0';
+      console.log('Hiding loading screen after assets are loaded');
+      
+      // Set loading progress to 100%
+      if (this.loadingProgress) {
+        this.loadingProgress.style.width = '100%';
+      }
+      
+      // Add animation to the loading screen elements
+      const loadingTitle = document.querySelector('.loading-text-title');
+      if (loadingTitle instanceof HTMLElement) {
+        loadingTitle.style.transition = 'transform 0.5s ease-in-out';
+        loadingTitle.style.color = '#FFFFFF'; // Keep it white
+        loadingTitle.style.transform = 'scale(1.1)';
+      }
+      
+      // Fade out the subtitle and loading bar
+      const loadingSubtitle = document.querySelector('.loading-text-subtitle');
+      if (loadingSubtitle instanceof HTMLElement) {
+        loadingSubtitle.style.transition = 'opacity 1.5s ease-out';
+        loadingSubtitle.style.opacity = '0';
+      }
+      
+      const loadingBarContainer = document.querySelector('.loading-bar');
+      if (loadingBarContainer instanceof HTMLElement) {
+        loadingBarContainer.style.transition = 'opacity 1.5s ease-out';
+        loadingBarContainer.style.opacity = '0';
+      }
+      
+      // Pulse animation for the loading bar before it fades
+      if (this.loadingProgress instanceof HTMLElement) {
+        this.loadingProgress.style.transition = 'background-color 0.5s ease-in-out, opacity 1.5s ease-out';
+        this.loadingProgress.style.backgroundColor = '#00E0D0';
+      }
+      
+      // Add a 7-second delay before hiding the loading screen
+      // This gives time for the LION MYSTIC logo to be prominently displayed
       setTimeout(() => {
-        if (this.loadingScreen) {
-          this.loadingScreen.style.display = 'none';
-          
-          // Show main menu if game hasn't started yet
-          if (!this.gameStarted) {
-            this.uiManager.showMainMenu();
-          }
+        console.log('Delay complete, now transitioning loading screen with blur effect');
+        
+        // Create blur transition effect
+        this.createPixelationEffect();
+        
+      }, 7000); // 7-second delay
+    } else {
+      console.log('Loading screen element not found');
+    }
+  }
+  
+  /**
+   * Create a blur transition effect
+   * This creates a smooth blur transition from the loading screen to the main menu
+   */
+  private createPixelationEffect(): void {
+    // Renamed for backward compatibility, but now implements blur effect
+    this.createBlurTransition();
+  }
+  
+  /**
+   * Create a blur transition effect
+   * This creates a smooth blur transition from the loading screen to the main menu
+   */
+  private createBlurTransition(): void {
+    // Get the blur container
+    const blurContainer = document.getElementById('blurContainer');
+    if (!blurContainer) {
+      console.error('Blur container not found');
+      this.cleanupLoadingScreen();
+      return;
+    }
+    
+    // Make the container visible
+    blurContainer.style.display = 'block';
+    
+    // Hide the original loading screen immediately
+    if (this.loadingScreen) {
+      this.loadingScreen.style.opacity = '0';
+      
+      // Remove the loading screen after it fades out
+      setTimeout(() => {
+        if (this.loadingScreen && this.loadingScreen.parentNode) {
+          this.loadingScreen.parentNode.removeChild(this.loadingScreen);
         }
       }, 500);
+    }
+    
+    // Start with no blur
+    blurContainer.style.filter = 'blur(0px)';
+    
+    // First phase: increase blur
+    setTimeout(() => {
+      blurContainer.style.filter = 'blur(20px)';
+      
+      // Second phase: fade out while blurred
+      setTimeout(() => {
+        blurContainer.style.opacity = '0';
+        
+        // Finally clean up after the transition completes
+        setTimeout(() => {
+          this.cleanupBlurEffect(blurContainer);
+        }, 1000); // Wait for opacity transition to complete
+      }, 800); // Time before starting to fade out
+    }, 400); // Time before applying blur
+  }
+  
+  /**
+   * Clean up the blur effect
+   */
+  private cleanupBlurEffect(blurContainer: HTMLElement): void {
+    // Reset and hide the container
+    blurContainer.style.filter = 'blur(0px)';
+    blurContainer.style.opacity = '1';
+    blurContainer.style.display = 'none';
+  }
+  
+  /**
+   * Clean up and remove the loading screen from the DOM
+   */
+  private cleanupLoadingScreen(): void {
+    if (this.loadingScreen && this.loadingScreen.parentNode) {
+      console.log('Removing loading screen from DOM');
+      this.loadingScreen.parentNode.removeChild(this.loadingScreen);
     }
   }
   
@@ -115,7 +226,7 @@ class PrismGame {
       this.engine.startRenderLoop();
       
       // Set callback for when level is loaded
-      this.levelManager.setOnLevelLoadedCallback(() => {
+      this.levelManager.setOnLevelLoadedCallback(async () => {
         // Get the current level
         const currentLevel = this.levelManager.getCurrentLevel();
         
@@ -149,22 +260,41 @@ class PrismGame {
           
           // Hide loading screen when level is ready
           this.hideLoadingScreen();
+
+          // Show the main menu after loading
+          await this.uiManager.showMainMenu();
         }
       });
       
-      // Load the Simple Primitive Training Facility level in the background
-      // We'll start the actual gameplay when the user clicks Play
-      // Using simplified primitive models for development until GoldenEye 64-style assets are available
-      await this.levelManager.loadLevel(LevelType.SIMPLE_PRIMITIVE_TRAINING);
-      
-      // Set up UI event handlers
-      this.uiManager.onStartGame = () => {
+      // Set up UI event handlers first
+      this.uiManager.onStartGame = async () => {
+        // Load the level when the user clicks Play
+        await this.levelManager.loadLevel(LevelType.SIMPLE_PRIMITIVE_TRAINING);
+        // Start gameplay after level is loaded
         this.startGameplay();
       };
       
       this.uiManager.onQuitGame = () => {
         window.close();
       };
+      
+      // Make sure UI is fully initialized before showing main menu
+      console.log('Ensuring UI is initialized before showing main menu');
+      
+      // Then explicitly show the main menu with a delay to ensure everything is initialized
+      setTimeout(async () => {
+        console.log('Explicitly showing main menu after initialization');
+        if (this.uiManager) {
+          // Force the menu to be visible
+          try {
+            this.hideLoadingScreen();
+            await this.uiManager.showMainMenu();
+            console.log('Main menu display triggered');
+          } catch (error) {
+            console.error('Error showing main menu in timeout:', error);
+          }
+        }
+      }, 500);
       
       console.log('Project Prism Protocol initialized successfully');
     } catch (error) {

@@ -42,6 +42,7 @@ export class MenuSystem {
   private themeMusic: string = "mainTheme";
   private trainingMusic: string = "trainingTheme";
   private isMusicLoaded: boolean = false;
+  private musicLoadingPromise: Promise<void> | null = null;
   
   // Callback functions
   private startGameCallback: (() => void) | null = null;
@@ -66,61 +67,78 @@ export class MenuSystem {
   /**
    * Load music for the menu and game
    */
-  private async loadMusic(): Promise<void> {
+  private loadMusic(): Promise<void> {
     if (this.soundSystem) {
-      try {
-        // Load main theme music
-        await this.soundSystem.loadSound(
-          this.themeMusic, 
-          "assets/audio/music/Project-Prism_theme.wav", 
-          {
-            loop: true,
-            autoplay: false,
-            volume: 0.7,
-            category: SoundCategory.MUSIC
-          }
-        );
-        
-        // Load training facility music
-        await this.soundSystem.loadSound(
-          this.trainingMusic, 
-          "assets/audio/music/Track1.wav", 
-          {
-            loop: true,
-            autoplay: false,
-            volume: 0.7,
-            category: SoundCategory.MUSIC
-          }
-        );
-        
-        this.isMusicLoaded = true;
-        console.log("Music loaded successfully");
-      } catch (error) {
-        console.error("Failed to load music:", error);
-      }
+      // Assign the promise to the class member
+      this.musicLoadingPromise = (async () => { 
+        try {
+          // Load main theme music
+          await this.soundSystem!.loadSound(
+            this.themeMusic, 
+            "assets/audio/music/Project-Prism_theme.wav", 
+            {
+              loop: true,
+              autoplay: false,
+              volume: 0.7,
+              category: SoundCategory.MUSIC
+            }
+          );
+          
+          // Load training facility music
+          await this.soundSystem!.loadSound(
+            this.trainingMusic, 
+            "assets/audio/music/Track1.wav", 
+            {
+              loop: true,
+              autoplay: false,
+              volume: 0.7,
+              category: SoundCategory.MUSIC
+            }
+          );
+          
+          this.isMusicLoaded = true;
+          console.log("Music loaded successfully");
+        } catch (error) {
+          console.error("Failed to load music:", error);
+          this.isMusicLoaded = false; 
+        }
+      })();
+      return this.musicLoadingPromise; 
     }
+    // If soundSystem is null, set music as not loaded and return a resolved promise
+    this.isMusicLoaded = false;
+    this.musicLoadingPromise = Promise.resolve(); 
+    return this.musicLoadingPromise;
   }
   
   /**
    * Initialize the menu system
    */
   public initialize(): void {
-    // Create main container for all menus
-    this.menuContainer = new GUI.Container("menuContainer");
-    this.menuContainer.width = 1;
-    this.menuContainer.height = 1;
-    this.advancedTexture.addControl(this.menuContainer);
-    
-    // Create each menu type
-    this.createMainMenu();
-    this.createPauseMenu();
-    this.createOptionsMenu();
-    this.createAboutScreen();
-    this.createGameOverScreen();
-    this.createConfirmationDialog();
-    
-    // Hide all menus initially
-    this.hideAllMenus();
+    try {
+      console.log('MenuSystem.initialize() called');
+      
+      // Create main container for all menus
+      this.menuContainer = new GUI.Container("menuContainer");
+      this.menuContainer.width = 1;
+      this.menuContainer.height = 1;
+      this.advancedTexture.addControl(this.menuContainer);
+      
+      // Create each menu type
+      this.createMainMenu();
+      this.createPauseMenu();
+      this.createOptionsMenu();
+      this.createAboutScreen();
+      this.createGameOverScreen();
+      this.createConfirmationDialog();
+      
+      // Hide all menus initially
+      this.hideAllMenus();
+      
+      console.log('MenuSystem initialization complete');
+    } catch (error) {
+      console.error('Error in MenuSystem.initialize():', error);
+    }
   }
   
   /**
@@ -156,7 +174,8 @@ export class MenuSystem {
     dialogTitle.text = "QUIT GAME";
     dialogTitle.height = "40px";
     dialogTitle.color = "white";
-    dialogTitle.fontFamily = "monospace";
+    dialogTitle.fontFamily = '"Helvetica Neue", Helvetica, Arial, sans-serif';
+    dialogTitle.fontWeight = 'bold';
     dialogTitle.fontSize = 24;
     dialogTitle.textHorizontalAlignment = GUI.Control.HORIZONTAL_ALIGNMENT_CENTER;
     dialogTitle.top = -60;
@@ -164,10 +183,11 @@ export class MenuSystem {
     
     // Dialog message
     const dialogMessage = new GUI.TextBlock("dialogMessage");
-    dialogMessage.text = "Are you sure you want to quit?";
+    dialogMessage.text = "ARE YOU SURE YOU WANT TO QUIT?";
     dialogMessage.height = "30px";
     dialogMessage.color = "white";
-    dialogMessage.fontFamily = "monospace";
+    dialogMessage.fontFamily = '"Helvetica Neue", Helvetica, Arial, sans-serif';
+    dialogMessage.fontWeight = 'bold';
     dialogMessage.fontSize = 18;
     dialogMessage.textHorizontalAlignment = GUI.Control.HORIZONTAL_ALIGNMENT_CENTER;
     dialogMessage.top = -10;
@@ -240,58 +260,107 @@ export class MenuSystem {
    * Create main menu
    */
   private createMainMenu(): void {
-    // Create main menu container
+    console.log('Creating main menu...');
+    
     this.mainMenuContainer = new GUI.Container("mainMenuContainer");
     this.mainMenuContainer.width = 1;
     this.mainMenuContainer.height = 1;
     this.menuContainer.addControl(this.mainMenuContainer);
-    
-    // Semi-transparent background
+
     const background = new GUI.Rectangle("mainMenuBackground");
     background.width = 1;
     background.height = 1;
-    background.background = "rgba(0, 0, 0, 0.7)";
-    background.thickness = 0;
+    background.background = "#0A141E"; // Dark MGS-style blue/black
+    background.thickness = 2;
+    background.color = "#304050"; // Muted cyan/blue-grey border
     this.mainMenuContainer.addControl(background);
-    
-    // Title panel
+
+    const mainStackPanel = new GUI.StackPanel("mainStackPanel");
+    mainStackPanel.width = "100%";
+    mainStackPanel.height = "100%";
+    mainStackPanel.isVertical = true;
+    mainStackPanel.horizontalAlignment = GUI.Control.HORIZONTAL_ALIGNMENT_CENTER;
+    mainStackPanel.verticalAlignment = GUI.Control.VERTICAL_ALIGNMENT_CENTER;
+    mainStackPanel.paddingLeft = "20px";
+    mainStackPanel.paddingRight = "20px";
+    mainStackPanel.top = "50px"; // Move menu content down
+    mainStackPanel.spacing = 50; // Updated spacing to 50px
+    this.mainMenuContainer.addControl(mainStackPanel);
+
+    // Title panel (for logo)
     const titlePanel = new GUI.StackPanel("titlePanel");
-    titlePanel.width = "600px";
-    titlePanel.height = "auto";
+    titlePanel.width = "100%";
+    titlePanel.heightInPixels = this.scene.getEngine().getRenderHeight() * 0.25; // Restored dynamic height
+    titlePanel.isVertical = true;
     titlePanel.horizontalAlignment = GUI.Control.HORIZONTAL_ALIGNMENT_CENTER;
-    titlePanel.verticalAlignment = GUI.Control.VERTICAL_ALIGNMENT_TOP;
-    titlePanel.top = 100;
-    this.mainMenuContainer.addControl(titlePanel);
+    titlePanel.verticalAlignment = GUI.Control.VERTICAL_ALIGNMENT_TOP; // Align to top
+    mainStackPanel.addControl(titlePanel);
+
+    // Create a separate container for the logo at the top of the screen
+    const logoContainer = new GUI.Container("logoContainer");
+    logoContainer.width = 1;
+    logoContainer.height = "450px"; // Increased height to prevent logo from being cut off
+    logoContainer.horizontalAlignment = GUI.Control.HORIZONTAL_ALIGNMENT_CENTER;
+    logoContainer.verticalAlignment = GUI.Control.VERTICAL_ALIGNMENT_TOP;
+    logoContainer.top = "20px"; // Position from top of screen
+    this.mainMenuContainer.addControl(logoContainer);
     
-    // Game title
-    const titleText = new GUI.TextBlock("titleText");
-    titleText.text = "PROJECT PRISM PROTOCOL";
-    titleText.height = "80px";
-    titleText.color = "white";
-    titleText.fontFamily = "monospace";
-    titleText.fontSize = 48;
-    titleText.textHorizontalAlignment = GUI.Control.HORIZONTAL_ALIGNMENT_CENTER;
-    titlePanel.addControl(titleText);
+    // Logo Image with transparency support and animation (no drop shadow)
+    const logoImage = new GUI.Image("logoImage", "assets/ui/logo.png");
+    logoImage.widthInPixels = 1529; // Increased by 20% from 1274
+    logoImage.heightInPixels = 382; // Increased by 20% from 318
+    logoImage.stretch = GUI.Image.STRETCH_UNIFORM;
+    logoImage.horizontalAlignment = GUI.Control.HORIZONTAL_ALIGNMENT_CENTER;
+    logoImage.verticalAlignment = GUI.Control.VERTICAL_ALIGNMENT_TOP;
     
-    // Subtitle
-    const subtitleText = new GUI.TextBlock("subtitleText");
-    subtitleText.text = "A BROWSER-BASED FPS EXPERIENCE";
-    subtitleText.height = "30px";
-    subtitleText.color = "#bdc3c7";
-    subtitleText.fontFamily = "monospace";
-    subtitleText.fontSize = 18;
-    subtitleText.textHorizontalAlignment = GUI.Control.HORIZONTAL_ALIGNMENT_CENTER;
-    titlePanel.addControl(subtitleText);
+    // Set transparency properties
+    logoImage.alpha = 1.0; // Full opacity
+    // Apply a color to ensure proper alpha channel handling
+    logoImage.color = "transparent";
     
+    // Add logo to the logo container
+    logoContainer.addControl(logoImage);
+    
+    // Create bouncing animation using GSAP
+    const animateLogo = () => {
+      // Create a timeline for the bouncing effect
+      const timeline = gsap.timeline({
+        repeat: -1, // Infinite repetition
+        yoyo: true, // Reverse the animation
+        repeatDelay: 0.5, // Pause at the top and bottom
+      });
+      
+      // Add the bounce animation - very slow and subtle
+      timeline.to(logoImage, {
+        top: -8, // Move up by only 8 pixels for subtle effect
+        duration: 3, // Longer duration for slower movement
+        ease: "sine.inOut", // Smooth sine wave easing
+      });
+    };
+    
+    // Start the animation
+    animateLogo();
+
+    // NEW Game Version Text (v0.1.0 Alpha) - Added to mainStackPanel
+    const versionText = new GUI.TextBlock("versionText", "V0.1.0 ALPHA");
+    versionText.color = "#A0A0A0"; // Light grey for subtlety (can change back to red if needed)
+    versionText.fontSize = 16; // Adjusted font size
+    versionText.fontFamily = '"Silkscreen", monospace';
+    versionText.fontWeight = 'bold'; // Changed to bold
+    versionText.height = "30px";
+    versionText.textHorizontalAlignment = GUI.Control.HORIZONTAL_ALIGNMENT_CENTER;
+    mainStackPanel.addControl(versionText); // Add version text after titlePanel
+
     // Menu buttons panel
     const menuButtonsPanel = new GUI.StackPanel("menuButtonsPanel");
-    menuButtonsPanel.width = "300px";
-    menuButtonsPanel.height = "auto";
+    menuButtonsPanel.width = "100%";
+    menuButtonsPanel.heightInPixels = 350; // Adjusted height, was 300px
+    menuButtonsPanel.isVertical = true;
     menuButtonsPanel.horizontalAlignment = GUI.Control.HORIZONTAL_ALIGNMENT_CENTER;
     menuButtonsPanel.verticalAlignment = GUI.Control.VERTICAL_ALIGNMENT_CENTER;
-    menuButtonsPanel.spacing = 20;
-    this.mainMenuContainer.addControl(menuButtonsPanel);
-    
+    menuButtonsPanel.spacing = 15;
+    mainStackPanel.addControl(menuButtonsPanel);
+
     // Play button
     const playButton = this.createMenuButton("playButton", "PLAY", () => {
       // Stop theme music and play training facility music
@@ -332,28 +401,30 @@ export class MenuSystem {
       this.showQuitConfirmation();
     });
     menuButtonsPanel.addControl(quitButton);
-    
-    // Version info
-    const versionText = new GUI.TextBlock("versionText");
-    versionText.text = "VERSION 0.1.0 | MAY 2025";
-    versionText.height = "20px";
-    versionText.color = "#7f8c8d";
-    versionText.fontFamily = "monospace";
-    versionText.fontSize = 12;
-    versionText.horizontalAlignment = GUI.Control.HORIZONTAL_ALIGNMENT_RIGHT;
-    versionText.verticalAlignment = GUI.Control.VERTICAL_ALIGNMENT_BOTTOM;
-    versionText.left = -20;
-    versionText.top = -20;
-    this.mainMenuContainer.addControl(versionText);
+
+    // Copyright text
+    const copyrightText = new GUI.TextBlock("copyrightText", "2025 LION MYSTIC - ALL RIGHTS RESERVED"); // Uppercased
+    copyrightText.height = "30px";
+    copyrightText.color = "#A0A0A0";
+    copyrightText.fontSize = 14;
+    copyrightText.fontFamily = '"Silkscreen", monospace'; // Updated to Silkscreen font
+    copyrightText.fontWeight = 'bold'; // Added weight
+    copyrightText.paddingTopInPixels = 20; // Space above copyright
+    mainStackPanel.addControl(copyrightText);
+
+    console.log('Main menu created successfully');
   }
   
   /**
    * Show quit confirmation dialog
    */
   private showQuitConfirmation(): void {
+    this.previousMenu = this.activeMenu;
+    this.activeMenu = "quitConfirmation";
     this.hideAllMenus();
     this.confirmationDialogContainer.isVisible = true;
-    this.activeMenu = "confirmation";
+    this.confirmationDialogContainer.alpha = 0;
+    gsap.to(this.confirmationDialogContainer, { alpha: 1, duration: 0.3 });
   }
   
   /**
@@ -379,7 +450,8 @@ export class MenuSystem {
     pauseTitle.text = "PAUSED";
     pauseTitle.height = "60px";
     pauseTitle.color = "white";
-    pauseTitle.fontFamily = "monospace";
+    pauseTitle.fontFamily = '"Helvetica Neue", Helvetica, Arial, sans-serif';
+    pauseTitle.fontWeight = 'bold';
     pauseTitle.fontSize = 36;
     pauseTitle.horizontalAlignment = GUI.Control.HORIZONTAL_ALIGNMENT_CENTER;
     pauseTitle.verticalAlignment = GUI.Control.VERTICAL_ALIGNMENT_TOP;
@@ -420,148 +492,138 @@ export class MenuSystem {
   private createOptionsMenu(): void {
     // Create options menu container
     this.optionsMenuContainer = new GUI.Container("optionsMenuContainer");
-    this.optionsMenuContainer.width = 1;
-    this.optionsMenuContainer.height = 1;
+    this.optionsMenuContainer.width = 0.8;
+    this.optionsMenuContainer.height = 0.8;
+    this.optionsMenuContainer.horizontalAlignment = GUI.Control.HORIZONTAL_ALIGNMENT_CENTER;
+    this.optionsMenuContainer.verticalAlignment = GUI.Control.VERTICAL_ALIGNMENT_CENTER;
     this.menuContainer.addControl(this.optionsMenuContainer);
-    
-    // Semi-transparent background
-    const background = new GUI.Rectangle("optionsMenuBackground");
+
+    // Background for the options menu
+    const background = new GUI.Rectangle("optionsBackground");
     background.width = 1;
     background.height = 1;
-    background.background = "rgba(0, 0, 0, 0.7)";
-    background.thickness = 0;
+    background.background = "#1c1c1c";
+    background.cornerRadius = 20;
+    background.thickness = 2;
+    background.color = "#3498db";
     this.optionsMenuContainer.addControl(background);
-    
-    // Options title
-    const optionsTitle = new GUI.TextBlock("optionsTitle");
-    optionsTitle.text = "SETTINGS";
-    optionsTitle.height = "60px";
-    optionsTitle.color = "white";
-    optionsTitle.fontFamily = "monospace";
-    optionsTitle.fontSize = 36;
-    optionsTitle.horizontalAlignment = GUI.Control.HORIZONTAL_ALIGNMENT_CENTER;
-    optionsTitle.verticalAlignment = GUI.Control.VERTICAL_ALIGNMENT_TOP;
-    optionsTitle.top = 80;
-    this.optionsMenuContainer.addControl(optionsTitle);
-    
-    // Create tab control for different settings categories
-    const tabContainer = new GUI.Container("tabContainer");
-    tabContainer.width = "600px";
-    tabContainer.height = "400px";
-    tabContainer.horizontalAlignment = GUI.Control.HORIZONTAL_ALIGNMENT_CENTER;
-    tabContainer.verticalAlignment = GUI.Control.VERTICAL_ALIGNMENT_CENTER;
-    this.optionsMenuContainer.addControl(tabContainer);
-    
-    // Tab buttons container
-    const tabButtonsContainer = new GUI.StackPanel("tabButtonsContainer");
-    tabButtonsContainer.isVertical = false;
-    tabButtonsContainer.height = "40px";
-    tabButtonsContainer.width = "100%";
-    tabButtonsContainer.horizontalAlignment = GUI.Control.HORIZONTAL_ALIGNMENT_CENTER;
-    tabButtonsContainer.verticalAlignment = GUI.Control.VERTICAL_ALIGNMENT_TOP;
-    tabButtonsContainer.spacing = 2;
-    tabContainer.addControl(tabButtonsContainer);
-    
-    // Tab content container
-    const tabContentContainer = new GUI.Container("tabContentContainer");
-    tabContentContainer.width = "100%";
-    tabContentContainer.height = "350px";
-    tabContentContainer.horizontalAlignment = GUI.Control.HORIZONTAL_ALIGNMENT_CENTER;
-    tabContentContainer.verticalAlignment = GUI.Control.VERTICAL_ALIGNMENT_TOP;
-    tabContentContainer.top = 45;
-    tabContainer.addControl(tabContentContainer);
-    
-    // Create tab contents
-    const controlsTab = this.createControlsTab();
-    const audioTab = this.createAudioTab();
-    const graphicsTab = this.createGraphicsTab();
-    const accessibilityTab = this.createAccessibilityTab();
-    
-    // Add tab contents to container (initially hidden)
-    tabContentContainer.addControl(controlsTab);
-    tabContentContainer.addControl(audioTab);
-    tabContentContainer.addControl(graphicsTab);
-    tabContentContainer.addControl(accessibilityTab);
-    
-    controlsTab.isVisible = true;
-    audioTab.isVisible = false;
-    graphicsTab.isVisible = false;
-    accessibilityTab.isVisible = false;
-    
-    // Create tab buttons
-    const createTabButton = (name: string, text: string, tabContent: GUI.Container) => {
-      const button = new GUI.Button(name);
-      button.width = "150px";
-      button.height = "40px";
-      button.thickness = 0;
-      button.cornerRadius = 0;
-      
-      const buttonBackground = new GUI.Rectangle(`${name}Background`);
-      buttonBackground.width = 1;
-      buttonBackground.height = 1;
-      buttonBackground.background = "rgba(52, 152, 219, 0.2)";
-      buttonBackground.color = "#3498db";
-      buttonBackground.thickness = 2;
-      buttonBackground.cornerRadius = 0;
-      button.addControl(buttonBackground);
-      
-      const buttonText = new GUI.TextBlock(`${name}Text`);
-      buttonText.text = text;
-      buttonText.color = "white";
-      buttonText.fontFamily = "monospace";
-      buttonText.fontSize = 16;
-      button.addControl(buttonText);
-      
-      // Set active state if this is the first tab
-      if (tabContent.isVisible) {
-        buttonBackground.background = "rgba(52, 152, 219, 0.6)";
-        buttonText.color = "#3498db";
-      }
-      
-      button.onPointerClickObservable.add(() => {
-        // Hide all tab contents
-        controlsTab.isVisible = false;
-        audioTab.isVisible = false;
-        graphicsTab.isVisible = false;
-        accessibilityTab.isVisible = false;
-        
-        // Show selected tab content
-        tabContent.isVisible = true;
-        
-        // Reset all button styles
-        tabButtonsContainer.children.forEach(child => {
-          if (child instanceof GUI.Button) {
-            const bg = child.children[0] as GUI.Rectangle;
-            const txt = child.children[1] as GUI.TextBlock;
-            bg.background = "rgba(52, 152, 219, 0.2)";
-            txt.color = "white";
+
+    const mainGrid = new GUI.Grid("optionsMainGrid");
+    mainGrid.addColumnDefinition(0.25); // For tabs
+    mainGrid.addColumnDefinition(0.75); // For content
+    mainGrid.addRowDefinition(1);    // Single row for layout
+    background.addControl(mainGrid);
+
+    const tabPanel = new GUI.StackPanel("optionsTabPanel");
+    tabPanel.width = "100%";
+    tabPanel.isVertical = true;
+    tabPanel.paddingLeft = "10px";
+    tabPanel.paddingRight = "10px";
+    tabPanel.paddingTop = "20px";
+    tabPanel.spacing = 10;
+    mainGrid.addControl(tabPanel, 0, 0);
+
+    const contentPanel = new GUI.Rectangle("optionsContentPanel");
+    contentPanel.width = "100%";
+    contentPanel.height = "100%";
+    contentPanel.thickness = 0;
+    contentPanel.paddingLeft = "10px";
+    contentPanel.paddingRight = "10px";
+    contentPanel.paddingTop = "20px";
+    contentPanel.paddingBottom = "60px"; // Space for Apply/Back buttons
+    mainGrid.addControl(contentPanel, 0, 1);
+
+    // Create tab content containers (initially invisible)
+    const controlsTabContent = this.createControlsTab();
+    controlsTabContent.isVisible = false;
+    contentPanel.addControl(controlsTabContent);
+
+    const audioTabContent = this.createAudioTab();
+    audioTabContent.isVisible = false;
+    contentPanel.addControl(audioTabContent);
+
+    const graphicsTabContent = this.createGraphicsTab();
+    graphicsTabContent.isVisible = false;
+    contentPanel.addControl(graphicsTabContent);
+
+    const accessibilityTabContent = this.createAccessibilityTab();
+    accessibilityTabContent.isVisible = false;
+    contentPanel.addControl(accessibilityTabContent);
+
+    // Tab buttons
+    const tabs = [
+      { name: "Controls", content: controlsTabContent },
+      { name: "Audio", content: audioTabContent },
+      { name: "Graphics", content: graphicsTabContent },
+      { name: "Accessibility", content: accessibilityTabContent },
+    ];
+
+    let activeTabContent: GUI.Container | null = null;
+
+    tabs.forEach(tabInfo => {
+      const tabButton = this.createTabButton(tabInfo.name.toLowerCase() + "TabButton", tabInfo.name.toUpperCase(), tabInfo.content);
+      tabPanel.addControl(tabButton);
+
+      // Store a reference to the button on the content container
+      (tabInfo.content as any)._tabButton = tabButton;
+
+      // Click action
+      tabButton.onPointerClickObservable.add(() => {
+        if (activeTabContent) {
+          activeTabContent.isVisible = false;
+          // Reset style of previously active tab button
+          if ((activeTabContent as any)._tabButton) {
+            (activeTabContent as any)._tabButton.background = "#2c3e50";
+            (activeTabContent as any)._tabButton.color = "white";
           }
-        });
-        
-        // Highlight active button
-        buttonBackground.background = "rgba(52, 152, 219, 0.6)";
-        buttonText.color = "#3498db";
+        }
+        tabInfo.content.isVisible = true;
+        activeTabContent = tabInfo.content;
+        // Style active tab button
+        tabButton.background = "#3498db";
+        tabButton.color = "#1c1c1c";
       });
-      
-      return button;
-    };
-    
-    // Add tab buttons
-    tabButtonsContainer.addControl(createTabButton("controlsTabButton", "CONTROLS", controlsTab));
-    tabButtonsContainer.addControl(createTabButton("audioTabButton", "AUDIO", audioTab));
-    tabButtonsContainer.addControl(createTabButton("graphicsTabButton", "GRAPHICS", graphicsTab));
-    tabButtonsContainer.addControl(createTabButton("accessibilityTabButton", "ACCESSIBILITY", accessibilityTab));
-    
-    // Back button
-    const backButton = this.createMenuButton("backFromOptionsButton", "BACK", () => {
-      this.showPreviousMenu();
     });
-    backButton.horizontalAlignment = GUI.Control.HORIZONTAL_ALIGNMENT_CENTER;
+
+    // Activate the first tab by default
+    if (tabs.length > 0) {
+      tabs[0].content.isVisible = true;
+      activeTabContent = tabs[0].content;
+      if ((tabs[0].content as any)._tabButton) {
+        (tabs[0].content as any)._tabButton.background = "#3498db";
+        (tabs[0].content as any)._tabButton.color = "#1c1c1c";
+      }
+    }
+
+    // Back button
+    const backButton = this.createMenuButton("optionsBackButton", "BACK", () => {
+      this.showPreviousMenu(); // Or specific menu like showMainMenu()
+    });
+    backButton.width = "150px";
+    backButton.height = "40px";
+    backButton.horizontalAlignment = GUI.Control.HORIZONTAL_ALIGNMENT_RIGHT;
     backButton.verticalAlignment = GUI.Control.VERTICAL_ALIGNMENT_BOTTOM;
-    backButton.top = -50;
-    this.optionsMenuContainer.addControl(backButton);
+    backButton.paddingRight = "20px";
+    backButton.paddingBottom = "10px";
+    background.addControl(backButton);
   }
-  
+
+  /**
+   * Create tab buttons
+   */
+  private createTabButton(name: string, text: string, tabContent: GUI.Container) {
+    const button = GUI.Button.CreateSimpleButton(name, text);
+    button.width = "100%";
+    button.height = "40px";
+    button.color = "white";
+    button.background = "#2c3e50";
+    button.fontFamily = '"Silkscreen", monospace';
+    button.fontWeight = 'bold';
+    button.fontSize = 16;
+    button.thickness = 0;
+    return button;
+  }
+
   /**
    * Create About screen
    */
@@ -585,7 +647,8 @@ export class MenuSystem {
     aboutTitle.text = "ABOUT PROJECT PRISM PROTOCOL";
     aboutTitle.height = "60px";
     aboutTitle.color = "white";
-    aboutTitle.fontFamily = "monospace";
+    aboutTitle.fontFamily = '"Helvetica Neue", Helvetica, Arial, sans-serif';
+    aboutTitle.fontWeight = 'bold';
     aboutTitle.fontSize = 36;
     aboutTitle.horizontalAlignment = GUI.Control.HORIZONTAL_ALIGNMENT_CENTER;
     aboutTitle.verticalAlignment = GUI.Control.VERTICAL_ALIGNMENT_TOP;
@@ -620,7 +683,8 @@ export class MenuSystem {
     overviewTitle.text = "GAME OVERVIEW";
     overviewTitle.height = "30px";
     overviewTitle.color = "#3498db";
-    overviewTitle.fontFamily = "monospace";
+    overviewTitle.fontFamily = '"Helvetica Neue", Helvetica, Arial, sans-serif';
+    overviewTitle.fontWeight = 'bold';
     overviewTitle.fontSize = 22;
     overviewTitle.textHorizontalAlignment = GUI.Control.HORIZONTAL_ALIGNMENT_LEFT;
     aboutContentPanel.addControl(overviewTitle);
@@ -629,7 +693,7 @@ export class MenuSystem {
     overviewText.text = "In Project Prism Protocol, you assume the role of a spy agent navigating through various environments to complete objectives. The game features multiple level types, weapons, and enemy encounters inspired by classic spy thrillers.";
     overviewText.height = "60px";
     overviewText.color = "white";
-    overviewText.fontFamily = "monospace";
+    overviewText.fontFamily = '"Helvetica Neue", Helvetica, Arial, sans-serif';
     overviewText.fontSize = 16;
     overviewText.textWrapping = true;
     overviewText.textHorizontalAlignment = GUI.Control.HORIZONTAL_ALIGNMENT_LEFT;
@@ -640,7 +704,8 @@ export class MenuSystem {
     featuresTitle.text = "KEY FEATURES";
     featuresTitle.height = "30px";
     featuresTitle.color = "#3498db";
-    featuresTitle.fontFamily = "monospace";
+    featuresTitle.fontFamily = '"Helvetica Neue", Helvetica, Arial, sans-serif';
+    featuresTitle.fontWeight = 'bold';
     featuresTitle.fontSize = 22;
     featuresTitle.textHorizontalAlignment = GUI.Control.HORIZONTAL_ALIGNMENT_LEFT;
     aboutContentPanel.addControl(featuresTitle);
@@ -654,7 +719,7 @@ export class MenuSystem {
                         "• Performance Optimized: Designed to run at 60+ FPS on mid-range hardware";
     featuresText.height = "150px";
     featuresText.color = "white";
-    featuresText.fontFamily = "monospace";
+    featuresText.fontFamily = '"Helvetica Neue", Helvetica, Arial, sans-serif';
     featuresText.fontSize = 16;
     featuresText.textWrapping = true;
     featuresText.textHorizontalAlignment = GUI.Control.HORIZONTAL_ALIGNMENT_LEFT;
@@ -665,7 +730,8 @@ export class MenuSystem {
     techTitle.text = "TECHNICAL STACK";
     techTitle.height = "30px";
     techTitle.color = "#3498db";
-    techTitle.fontFamily = "monospace";
+    techTitle.fontFamily = '"Helvetica Neue", Helvetica, Arial, sans-serif';
+    techTitle.fontWeight = 'bold';
     techTitle.fontSize = 22;
     techTitle.textHorizontalAlignment = GUI.Control.HORIZONTAL_ALIGNMENT_LEFT;
     aboutContentPanel.addControl(techTitle);
@@ -675,7 +741,7 @@ export class MenuSystem {
                     "• Supporting Libraries: Howler.js (audio), AmmoJS (physics), GSAP (animations), Stats.js (performance)";
     techText.height = "60px";
     techText.color = "white";
-    techText.fontFamily = "monospace";
+    techText.fontFamily = '"Helvetica Neue", Helvetica, Arial, sans-serif';
     techText.fontSize = 16;
     techText.textWrapping = true;
     techText.textHorizontalAlignment = GUI.Control.HORIZONTAL_ALIGNMENT_LEFT;
@@ -686,7 +752,8 @@ export class MenuSystem {
     browserTitle.text = "BROWSER COMPATIBILITY";
     browserTitle.height = "30px";
     browserTitle.color = "#3498db";
-    browserTitle.fontFamily = "monospace";
+    browserTitle.fontFamily = '"Helvetica Neue", Helvetica, Arial, sans-serif';
+    browserTitle.fontWeight = 'bold';
     browserTitle.fontSize = 22;
     browserTitle.textHorizontalAlignment = GUI.Control.HORIZONTAL_ALIGNMENT_LEFT;
     aboutContentPanel.addControl(browserTitle);
@@ -699,7 +766,7 @@ export class MenuSystem {
                        "• Edge 79+";
     browserText.height = "100px";
     browserText.color = "white";
-    browserText.fontFamily = "monospace";
+    browserText.fontFamily = '"Helvetica Neue", Helvetica, Arial, sans-serif';
     browserText.fontSize = 16;
     browserText.textWrapping = true;
     browserText.textHorizontalAlignment = GUI.Control.HORIZONTAL_ALIGNMENT_LEFT;
@@ -710,7 +777,7 @@ export class MenuSystem {
     disclaimerText.text = "Project Prism Protocol is a fan project inspired by GoldenEye 64 and is not affiliated with or endorsed by the owners of the GoldenEye intellectual property.";
     disclaimerText.height = "60px";
     disclaimerText.color = "#bdc3c7";
-    disclaimerText.fontFamily = "monospace";
+    disclaimerText.fontFamily = '"Helvetica Neue", Helvetica, Arial, sans-serif';
     disclaimerText.fontSize = 14;
     disclaimerText.textWrapping = true;
     disclaimerText.textHorizontalAlignment = GUI.Control.HORIZONTAL_ALIGNMENT_LEFT;
@@ -756,7 +823,8 @@ export class MenuSystem {
     movementHeader.text = "MOVEMENT CONTROLS";
     movementHeader.height = "30px";
     movementHeader.color = "#3498db";
-    movementHeader.fontFamily = "monospace";
+    movementHeader.fontFamily = '"Helvetica Neue", Helvetica, Arial, sans-serif';
+    movementHeader.fontWeight = 'bold';
     movementHeader.fontSize = 18;
     movementHeader.textHorizontalAlignment = GUI.Control.HORIZONTAL_ALIGNMENT_LEFT;
     controlsPanel.addControl(movementHeader);
@@ -784,7 +852,8 @@ export class MenuSystem {
     actionHeader.text = "ACTION CONTROLS";
     actionHeader.height = "30px";
     actionHeader.color = "#3498db";
-    actionHeader.fontFamily = "monospace";
+    actionHeader.fontFamily = '"Helvetica Neue", Helvetica, Arial, sans-serif';
+    actionHeader.fontWeight = 'bold';
     actionHeader.fontSize = 18;
     actionHeader.textHorizontalAlignment = GUI.Control.HORIZONTAL_ALIGNMENT_LEFT;
     controlsPanel.addControl(actionHeader);
@@ -812,7 +881,8 @@ export class MenuSystem {
     sensitivityHeader.text = "MOUSE SENSITIVITY";
     sensitivityHeader.height = "30px";
     sensitivityHeader.color = "#3498db";
-    sensitivityHeader.fontFamily = "monospace";
+    sensitivityHeader.fontFamily = '"Helvetica Neue", Helvetica, Arial, sans-serif';
+    sensitivityHeader.fontWeight = 'bold';
     sensitivityHeader.fontSize = 18;
     sensitivityHeader.textHorizontalAlignment = GUI.Control.HORIZONTAL_ALIGNMENT_LEFT;
     controlsPanel.addControl(sensitivityHeader);
@@ -840,7 +910,7 @@ export class MenuSystem {
     const actionText = new GUI.TextBlock(`action${row}`);
     actionText.text = action;
     actionText.color = "white";
-    actionText.fontFamily = "monospace";
+    actionText.fontFamily = '"Helvetica Neue", Helvetica, Arial, sans-serif';
     actionText.fontSize = 16;
     actionText.textHorizontalAlignment = GUI.Control.HORIZONTAL_ALIGNMENT_LEFT;
     grid.addControl(actionText, row, 0);
@@ -848,7 +918,7 @@ export class MenuSystem {
     const keyText = new GUI.TextBlock(`key${row}`);
     keyText.text = key;
     keyText.color = "#bdc3c7";
-    keyText.fontFamily = "monospace";
+    keyText.fontFamily = '"Helvetica Neue", Helvetica, Arial, sans-serif';
     keyText.fontSize = 16;
     keyText.textHorizontalAlignment = GUI.Control.HORIZONTAL_ALIGNMENT_LEFT;
     grid.addControl(keyText, row, 1);
@@ -884,7 +954,8 @@ export class MenuSystem {
     masterHeader.text = "MASTER VOLUME";
     masterHeader.height = "30px";
     masterHeader.color = "#3498db";
-    masterHeader.fontFamily = "monospace";
+    masterHeader.fontFamily = '"Helvetica Neue", Helvetica, Arial, sans-serif';
+    masterHeader.fontWeight = 'bold';
     masterHeader.fontSize = 18;
     masterHeader.textHorizontalAlignment = GUI.Control.HORIZONTAL_ALIGNMENT_LEFT;
     audioPanel.addControl(masterHeader);
@@ -909,7 +980,8 @@ export class MenuSystem {
     musicHeader.text = "MUSIC VOLUME";
     musicHeader.height = "30px";
     musicHeader.color = "#3498db";
-    musicHeader.fontFamily = "monospace";
+    musicHeader.fontFamily = '"Helvetica Neue", Helvetica, Arial, sans-serif';
+    musicHeader.fontWeight = 'bold';
     musicHeader.fontSize = 18;
     musicHeader.textHorizontalAlignment = GUI.Control.HORIZONTAL_ALIGNMENT_LEFT;
     audioPanel.addControl(musicHeader);
@@ -934,7 +1006,8 @@ export class MenuSystem {
     sfxHeader.text = "SOUND EFFECTS VOLUME";
     sfxHeader.height = "30px";
     sfxHeader.color = "#3498db";
-    sfxHeader.fontFamily = "monospace";
+    sfxHeader.fontFamily = '"Helvetica Neue", Helvetica, Arial, sans-serif';
+    sfxHeader.fontWeight = 'bold';
     sfxHeader.fontSize = 18;
     sfxHeader.textHorizontalAlignment = GUI.Control.HORIZONTAL_ALIGNMENT_LEFT;
     audioPanel.addControl(sfxHeader);
@@ -981,10 +1054,11 @@ export class MenuSystem {
     const musicToggleLabel = new GUI.TextBlock("musicToggleLabel");
     musicToggleLabel.text = "ENABLE MUSIC";
     musicToggleLabel.color = "white";
-    musicToggleLabel.fontFamily = "monospace";
+    musicToggleLabel.fontFamily = '"Helvetica Neue", Helvetica, Arial, sans-serif';
     musicToggleLabel.fontSize = 16;
     musicToggleLabel.textHorizontalAlignment = GUI.Control.HORIZONTAL_ALIGNMENT_LEFT;
     musicToggleLabel.paddingLeft = "10px";
+    musicToggleLabel.width = "150px"; 
     musicToggleContainer.addControl(musicToggleLabel);
     
     return audioTab;
@@ -1020,7 +1094,8 @@ export class MenuSystem {
     qualityHeader.text = "QUALITY PRESET";
     qualityHeader.height = "30px";
     qualityHeader.color = "#3498db";
-    qualityHeader.fontFamily = "monospace";
+    qualityHeader.fontFamily = '"Helvetica Neue", Helvetica, Arial, sans-serif';
+    qualityHeader.fontWeight = 'bold';
     qualityHeader.fontSize = 18;
     qualityHeader.textHorizontalAlignment = GUI.Control.HORIZONTAL_ALIGNMENT_LEFT;
     graphicsPanel.addControl(qualityHeader);
@@ -1046,17 +1121,18 @@ export class MenuSystem {
       radioButton.color = "#3498db";
       radioButton.background = "white";
       radioButton.group = "qualityGroup";
-      radioButton.isChecked = index === 1; // Medium selected by default
+      radioButton.isChecked = index === 1; 
       radioButtons.push(radioButton);
       radioRow.addControl(radioButton);
       
       const radioLabel = new GUI.TextBlock(`radio${option}Label`);
       radioLabel.text = option.toUpperCase();
       radioLabel.color = "white";
-      radioLabel.fontFamily = "monospace";
+      radioLabel.fontFamily = '"Helvetica Neue", Helvetica, Arial, sans-serif';
       radioLabel.fontSize = 16;
       radioLabel.textHorizontalAlignment = GUI.Control.HORIZONTAL_ALIGNMENT_LEFT;
       radioLabel.paddingLeft = "10px";
+      radioLabel.width = "100px"; 
       radioRow.addControl(radioLabel);
       
       radioButton.onIsCheckedChangedObservable.add((value) => {
@@ -1072,7 +1148,8 @@ export class MenuSystem {
     effectsHeader.text = "VISUAL EFFECTS";
     effectsHeader.height = "30px";
     effectsHeader.color = "#3498db";
-    effectsHeader.fontFamily = "monospace";
+    effectsHeader.fontFamily = '"Helvetica Neue", Helvetica, Arial, sans-serif';
+    effectsHeader.fontWeight = 'bold';
     effectsHeader.fontSize = 18;
     effectsHeader.textHorizontalAlignment = GUI.Control.HORIZONTAL_ALIGNMENT_LEFT;
     graphicsPanel.addControl(effectsHeader);
@@ -1095,16 +1172,17 @@ export class MenuSystem {
       checkbox.height = "20px";
       checkbox.color = "#3498db";
       checkbox.background = "white";
-      checkbox.isChecked = option === "Anti-Aliasing"; // Only Anti-Aliasing enabled by default
+      checkbox.isChecked = option === "Anti-Aliasing"; 
       checkboxRow.addControl(checkbox);
       
       const checkboxLabel = new GUI.TextBlock(`checkbox${option}Label`);
       checkboxLabel.text = option.toUpperCase();
       checkboxLabel.color = "white";
-      checkboxLabel.fontFamily = "monospace";
+      checkboxLabel.fontFamily = '"Helvetica Neue", Helvetica, Arial, sans-serif';
       checkboxLabel.fontSize = 16;
       checkboxLabel.textHorizontalAlignment = GUI.Control.HORIZONTAL_ALIGNMENT_LEFT;
       checkboxLabel.paddingLeft = "10px";
+      checkboxLabel.width = "150px"; 
       checkboxRow.addControl(checkboxLabel);
       
       checkbox.onIsCheckedChangedObservable.add((value) => {
@@ -1146,7 +1224,8 @@ export class MenuSystem {
     textSizeHeader.text = "TEXT SIZE";
     textSizeHeader.height = "30px";
     textSizeHeader.color = "#3498db";
-    textSizeHeader.fontFamily = "monospace";
+    textSizeHeader.fontFamily = '"Helvetica Neue", Helvetica, Arial, sans-serif';
+    textSizeHeader.fontWeight = 'bold';
     textSizeHeader.fontSize = 18;
     textSizeHeader.textHorizontalAlignment = GUI.Control.HORIZONTAL_ALIGNMENT_LEFT;
     accessibilityPanel.addControl(textSizeHeader);
@@ -1171,7 +1250,8 @@ export class MenuSystem {
     colorBlindHeader.text = "COLOR BLIND MODE";
     colorBlindHeader.height = "30px";
     colorBlindHeader.color = "#3498db";
-    colorBlindHeader.fontFamily = "monospace";
+    colorBlindHeader.fontFamily = '"Helvetica Neue", Helvetica, Arial, sans-serif';
+    colorBlindHeader.fontWeight = 'bold';
     colorBlindHeader.fontSize = 18;
     colorBlindHeader.textHorizontalAlignment = GUI.Control.HORIZONTAL_ALIGNMENT_LEFT;
     accessibilityPanel.addControl(colorBlindHeader);
@@ -1197,17 +1277,18 @@ export class MenuSystem {
       radioButton.color = "#3498db";
       radioButton.background = "white";
       radioButton.group = "colorBlindGroup";
-      radioButton.isChecked = index === 0; // Off selected by default
+      radioButton.isChecked = index === 0; 
       radioButtons.push(radioButton);
       radioRow.addControl(radioButton);
       
       const radioLabel = new GUI.TextBlock(`colorBlind${option}Label`);
       radioLabel.text = option.toUpperCase();
       radioLabel.color = "white";
-      radioLabel.fontFamily = "monospace";
+      radioLabel.fontFamily = '"Helvetica Neue", Helvetica, Arial, sans-serif';
       radioLabel.fontSize = 16;
       radioLabel.textHorizontalAlignment = GUI.Control.HORIZONTAL_ALIGNMENT_LEFT;
       radioLabel.paddingLeft = "10px";
+      radioLabel.width = "100px"; 
       radioRow.addControl(radioLabel);
       
       radioButton.onIsCheckedChangedObservable.add((value) => {
@@ -1240,10 +1321,11 @@ export class MenuSystem {
     const motionLabel = new GUI.TextBlock("motionLabel");
     motionLabel.text = "REDUCED MOTION";
     motionLabel.color = "white";
-    motionLabel.fontFamily = "monospace";
+    motionLabel.fontFamily = '"Helvetica Neue", Helvetica, Arial, sans-serif';
     motionLabel.fontSize = 16;
     motionLabel.textHorizontalAlignment = GUI.Control.HORIZONTAL_ALIGNMENT_LEFT;
     motionLabel.paddingLeft = "10px";
+    motionLabel.width = "150px"; 
     motionContainer.addControl(motionLabel);
     
     return accessibilityTab;
@@ -1272,7 +1354,8 @@ export class MenuSystem {
     gameOverText.text = "MISSION FAILED";
     gameOverText.height = "80px";
     gameOverText.color = "#e74c3c";
-    gameOverText.fontFamily = "monospace";
+    gameOverText.fontFamily = '"Helvetica Neue", Helvetica, Arial, sans-serif';
+    gameOverText.fontWeight = 'bold';
     gameOverText.fontSize = 48;
     gameOverText.horizontalAlignment = GUI.Control.HORIZONTAL_ALIGNMENT_CENTER;
     gameOverText.verticalAlignment = GUI.Control.VERTICAL_ALIGNMENT_CENTER;
@@ -1311,56 +1394,90 @@ export class MenuSystem {
    * @returns Button control
    */
   private createMenuButton(name: string, text: string, callback: () => void): GUI.Button {
-    const button = new GUI.Button(name);
-    button.width = "300px";
+    const button = GUI.Button.CreateSimpleButton(name, text.toUpperCase());
+    button.width = "350px";
     button.height = "50px";
-    button.thickness = 0;
-    button.cornerRadius = 5;
+    button.fontFamily = '"Silkscreen", monospace';
+    button.fontWeight = 'bold';
+    button.fontSize = 22;
+    button.cornerRadius = 0;
     
-    // Button background
-    const buttonBackground = new GUI.Rectangle(`${name}Background`);
-    buttonBackground.width = 1;
-    buttonBackground.height = 1;
-    buttonBackground.background = "rgba(52, 152, 219, 0.2)";
-    buttonBackground.color = "#3498db";
-    buttonBackground.thickness = 2;
-    buttonBackground.cornerRadius = 5;
-    button.addControl(buttonBackground);
-    
-    // Button text
-    const buttonText = new GUI.TextBlock(`${name}Text`);
-    buttonText.text = text;
-    buttonText.color = "white";
-    buttonText.fontFamily = "monospace";
-    buttonText.fontSize = 18;
-    button.addControl(buttonText);
-    
-    // Button hover effect
+    const originalBgColor = "#101820";
+    const originalBorderColor = "#405060";
+    const originalTextColor = "#D0D0D0";
+
+    const hoverBgColor = "#2fb8c9";         // Starting cyan color for base hover
+    const pulseHoverBgColor = "#217baf";    // Transition to darker blue for pulse
+    const clickBgColor = "#217baf";         // Same darker blue for click flash
+    const hoverBorderColor = "#FFFFFF";
+    const hoverTextColor = "#FFFFFF";
+
+    // Initial style
+    button.background = originalBgColor;
+    button.color = originalBorderColor;
+    button.thickness = 1;
+    if (button.textBlock) {
+      button.textBlock.color = originalTextColor;
+      button.textBlock.fontFamily = '"Silkscreen", monospace';
+      button.textBlock.fontWeight = 'bold';
+    }
+
+    button.onPointerClickObservable.add(callback); // Keep original click logic for action
+
+    let hoverTween: gsap.core.Tween | null = null;
+
     button.onPointerEnterObservable.add(() => {
-      buttonBackground.background = "rgba(52, 152, 219, 0.4)";
-      buttonText.color = "#3498db";
-      gsap.to(button, { width: "320px", duration: 0.2 });
+      if (hoverTween) {
+        hoverTween.kill();
+      }
+      // Set text and border color immediately
+      if (button.textBlock) {
+        button.textBlock.color = hoverTextColor;
+      }
+      button.color = hoverBorderColor;
+      // Start pulse animation for background
+      button.background = hoverBgColor; // Start with base hover color
+      hoverTween = gsap.to(button, { 
+        background: pulseHoverBgColor,
+        duration: 0.6, 
+        repeat: -1, 
+        yoyo: true, 
+        ease: "sine.inOut"
+      });
+      this.scene.hoverCursor = "pointer";
     });
-    
+
     button.onPointerOutObservable.add(() => {
-      buttonBackground.background = "rgba(52, 152, 219, 0.2)";
-      buttonText.color = "white";
-      gsap.to(button, { width: "300px", duration: 0.2 });
+      if (hoverTween) {
+        hoverTween.kill();
+        hoverTween = null;
+      }
+      gsap.to(button, { background: originalBgColor, color: originalBorderColor, duration: 0.1 });
+      if (button.textBlock) {
+        gsap.to(button.textBlock, { color: originalTextColor, duration: 0.1 });
+      }
+      this.scene.hoverCursor = "default";
     });
-    
-    // Button click effect
+
     button.onPointerDownObservable.add(() => {
-      buttonBackground.background = "rgba(52, 152, 219, 0.6)";
+      if (hoverTween) {
+        hoverTween.kill(); // Stop pulse for solid click color
+        hoverTween = null;
+      }
+      gsap.to(button, { background: clickBgColor, duration: 0.05 });
     });
-    
+
     button.onPointerUpObservable.add(() => {
-      buttonBackground.background = "rgba(52, 152, 219, 0.4)";
-      callback();
+      // After click, revert to hover base color. If mouse is still over, onPointerEnter will restart pulse.
+      // If mouse left, onPointerOut would have already set it to original.
+      // This ensures it returns to a non-flashing state quickly.
+      gsap.to(button, { background: hoverBgColor, duration: 0.1 }); 
+      // The callback is already part of onPointerClickObservable, so no need to call it here again
     });
-    
+
     return button;
   }
-  
+
   /**
    * Update menu animations
    * @param deltaTime Time since last frame in seconds
@@ -1368,31 +1485,81 @@ export class MenuSystem {
   public update(deltaTime: number): void {
     // Update animations or dynamic elements if needed
   }
-  
+
   /**
    * Show the main menu
    */
-  public showMainMenu(): void {
-    this.hideAllMenus();
-    this.mainMenuContainer.isVisible = true;
-    this.activeMenu = "mainMenu";
-    
-    // Play theme music if it's loaded
-    if (this.soundSystem && this.isMusicLoaded) {
-      // If another music is playing, stop it first
-      if (this.soundSystem.isPlaying(this.trainingMusic)) {
-        this.soundSystem.stopMusic(1.5);
-        setTimeout(() => {
-          if (this.soundSystem) {
-            this.soundSystem.playMusic(this.themeMusic);
-          }
-        }, 1500);
-      } else {
-        this.soundSystem.playMusic(this.themeMusic);
+  public async showMainMenu(): Promise<void> {
+    try {
+      console.log('MenuSystem.showMainMenu() called');
+      
+      // Check if mainMenuContainer exists
+      if (!this.mainMenuContainer) {
+        console.error('mainMenuContainer is undefined');
+        return;
       }
+      
+      // Check parent container visibility first
+      console.log('Menu container visibility:', this.menuContainer.isVisible);
+      console.log('Menu container alpha:', this.menuContainer.alpha);
+      
+      // Make sure parent container is visible
+      this.show();
+      
+      console.log('After show() - Menu container visibility:', this.menuContainer.isVisible);
+      
+      console.log('Hiding all menus');
+      this.hideAllMenus();
+      
+      console.log('Setting mainMenuContainer to visible');
+      this.mainMenuContainer.isVisible = true;
+      
+      // Force update the container
+      this.advancedTexture.markAsDirty();
+      
+      console.log('Main menu container visibility:', this.mainMenuContainer.isVisible);
+      console.log('Main menu container alpha:', this.mainMenuContainer.alpha);
+      
+      // Debug all menu containers
+      console.log('Debug all containers:');
+      console.log('- mainMenuContainer:', this.mainMenuContainer.isVisible);
+      console.log('- pauseMenuContainer:', this.pauseMenuContainer.isVisible);
+      console.log('- optionsMenuContainer:', this.optionsMenuContainer.isVisible);
+      console.log('- aboutScreenContainer:', this.aboutScreenContainer.isVisible);
+      console.log('- gameOverContainer:', this.gameOverContainer.isVisible);
+      console.log('- confirmationDialogContainer:', this.confirmationDialogContainer.isVisible);
+      
+      this.activeMenu = "mainMenu";
+      
+      // Await the music loading promise
+      if (this.musicLoadingPromise) {
+        await this.musicLoadingPromise;
+      }
+      
+      // Play theme music if it's loaded
+      if (this.soundSystem && this.isMusicLoaded) {
+        console.log('Playing theme music (ensured loaded)');
+        // If another music is playing, stop it first
+        if (this.soundSystem.isPlaying(this.trainingMusic)) {
+          this.soundSystem.stopMusic(1.5);
+          setTimeout(() => {
+            if (this.soundSystem) {
+              this.soundSystem.playMusic(this.themeMusic);
+            }
+          }, 1500);
+        } else {
+          this.soundSystem.playMusic(this.themeMusic);
+        }
+      } else {
+        console.warn('Music could not be played: SoundSystem or music not ready.');
+      }
+      
+      console.log('Main menu should now be visible and music playing if loaded');
+    } catch (error) {
+      console.error('Error in showMainMenu:', error);
     }
   }
-  
+
   /**
    * Show the pause menu
    */
@@ -1401,7 +1568,7 @@ export class MenuSystem {
     this.pauseMenuContainer.isVisible = true;
     this.activeMenu = "pauseMenu";
   }
-  
+
   /**
    * Show the options menu
    */
@@ -1410,7 +1577,7 @@ export class MenuSystem {
     this.optionsMenuContainer.isVisible = true;
     this.activeMenu = "options";
   }
-  
+
   /**
    * Show the about screen
    */
@@ -1419,7 +1586,7 @@ export class MenuSystem {
     this.aboutScreenContainer.isVisible = true;
     this.activeMenu = "about";
   }
-  
+
   /**
    * Show the game over screen
    */
@@ -1428,7 +1595,7 @@ export class MenuSystem {
     this.gameOverContainer.isVisible = true;
     this.activeMenu = "gameOver";
   }
-  
+
   /**
    * Hide all menus
    */
@@ -1440,49 +1607,57 @@ export class MenuSystem {
     this.gameOverContainer.isVisible = false;
     this.confirmationDialogContainer.isVisible = false;
   }
-  
+
   /**
    * Hide the menu system
    */
   public hide(): void {
+    console.log('MenuSystem.hide() called');
     this.menuContainer.isVisible = false;
+    console.log('menuContainer visibility after hide():', this.menuContainer.isVisible);
   }
-  
+
   /**
    * Show the menu system
    */
   public show(): void {
+    console.log('MenuSystem.show() called');
     this.menuContainer.isVisible = true;
+    
+    // Force update the texture
+    this.advancedTexture.markAsDirty();
+    
+    console.log('menuContainer visibility after show():', this.menuContainer.isVisible);
   }
-  
+
   /**
    * Set callback for Start Game button
    */
   public setStartGameCallback(callback: () => void): void {
     this.startGameCallback = callback;
   }
-  
+
   /**
    * Set callback for Options button
    */
   public setOptionsCallback(callback: () => void): void {
     this.optionsCallback = callback;
   }
-  
+
   /**
    * Set callback for About button
    */
   public setAboutCallback(callback: () => void): void {
     this.aboutCallback = callback;
   }
-  
+
   /**
    * Set callback for Quit button
    */
   public setQuitGameCallback(callback: () => void): void {
     this.quitGameCallback = callback;
   }
-  
+
   /**
    * Dispose of menu resources
    */

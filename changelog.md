@@ -7,6 +7,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 ## [Unreleased]
 
 ### Added
+- Enhanced loading screen and main menu UI (2025-05-06)
+  - Changed loading screen title from "PROJECT PRISM PROTOCOL" to "LION MYSTIC"
+  - Increased the size of the company logo on the loading screen
+  - Implemented fade-out effect for "STARTING GAME" text and loading bar
+  - Added smooth blur transition effect between loading screen and main menu
+  - Implemented animated bouncing logo on main menu with proper sizing
+  - Updated menu button colors to use #2fb8c9 (cyan) transitioning to #217baf (darker blue)
+
 - Created comprehensive UI and menu system documentation (2025-05-06)
   - Created HUD_menus.md with detailed specifications for all UI components
   - Documented main menu structure with Play, Settings, About, and Quit options
@@ -15,6 +23,16 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
   - Outlined pause menu design and implementation requirements
   - Provided technical implementation notes for the UI system
 
+### Fixed
+- Corrected audio control functionality in Options menu (2025-05-06)
+  - Resolved issue with music volume slider not affecting playback
+  - Fixed enable/disable music toggle to correctly control music state
+  - Addressed underlying metadata inconsistency in `SoundSystem` for Howler sounds
+- Addressed UI layout warnings by using fixed pixel dimensions (2025-05-06)
+  - Set explicit pixel widths for labels in Graphics and Accessibility tabs to prevent console warnings
+- Ensured theme music plays immediately on initial main menu display (2025-05-06)
+  - Modified `MenuSystem` and `UIManager` to correctly `await` music loading before playback attempt in `showMainMenu`.
+  - Updated `PrismGame` class in `main.ts` to `await` `uiManager.showMainMenu` in relevant callbacks.
 - Implemented simplified primitive model system for Training Facility (2025-05-05)
   - Created SimplePrimitiveGenerator utility for generating geometric primitives
   - Developed TrainingPrimitiveManager for managing primitive models in the scene

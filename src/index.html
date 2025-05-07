@@ -4,6 +4,9 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Project Prism Protocol</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Silkscreen:wght@400;700&display=swap" rel="stylesheet">
   <style>
     html, body {
       width: 100%;
@@ -18,41 +21,78 @@
       touch-action: none;
     }
     .loading-screen {
-      position: absolute;
+      position: fixed;
       top: 0;
       left: 0;
       width: 100%;
       height: 100%;
-      background-color: #000;
+      background-color: #000000;
       display: flex;
       flex-direction: column;
       justify-content: center;
       align-items: center;
-      color: #fff;
-      z-index: 100;
+      z-index: 9999;
+      color: #FFFFFF;
+      font-family: "Silkscreen", monospace !important;
+      font-weight: bold !important;
+    }
+    .loading-text-title {
+      font-size: 4em; /* Increased from 2.5em */
+      margin-bottom: 40px; /* Increased from 20px */
+      letter-spacing: 4px; /* Increased from 2px */
+      margin-top: -100px; /* Move up from center */
+      color: #FFFFFF; /* Keep it pure white */
+    }
+    .loading-text-subtitle {
+      font-size: 1.5em;
+      margin-bottom: 30px;
+      letter-spacing: 1px;
     }
     .loading-bar {
-      width: 300px;
+      width: 350px;
       height: 20px;
-      background-color: #333;
-      margin-top: 20px;
+      background-color: #101820;
+      border: 1px solid #405060;
     }
     .loading-progress {
       width: 0%;
       height: 100%;
-      background-color: #0078d7;
+      background-color: #008075;
       transition: width 0.3s ease;
+    }
+    /* Blur transition effect styles */
+    .blur-container {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 10000;
+      pointer-events: none;
+      display: none;
+      background-color: #000000;
+      transition: opacity 1s ease, filter 1.2s ease-in-out;
+      opacity: 1;
+      filter: blur(0px);
+    }
+    
+    /* Logo styles to ensure transparency */
+    .logo-image {
+      max-width: 100%;
+      height: auto;
+      image-rendering: pixelated; /* Maintain pixel-perfect rendering for retro look */
     }
   </style>
 </head>
 <body>
   <div class="loading-screen" id="loadingScreen">
-    <h2>Project Prism Protocol</h2>
-    <p>Loading game assets...</p>
+    <div class="loading-text-title">LION MYSTIC</div>
+    <div class="loading-text-subtitle">LOADING GAME ASSETS...</div>
     <div class="loading-bar">
       <div class="loading-progress" id="loadingProgress"></div>
     </div>
   </div>
+  <div class="blur-container" id="blurContainer"></div>
   <canvas id="renderCanvas"></canvas>
 </body>
 </html>

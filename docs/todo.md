@@ -69,19 +69,26 @@ This document tracks the current development priorities and tasks for Project Pr
 - [x] Add visual feedback for player damage
 - [x] Create weapon selection UI
 - [x] Document UI and menu system in HUD_menus.md
+- [x] Fix audio controls (volume slider, music toggle) in Options menu
+- [x] Address layout warnings for UI elements by using fixed pixel dimensions
+- [x] Enhance loading screen with LION MYSTIC company branding
+- [x] Implement blur transition effect between loading screen and main menu
+- [x] Add animated bouncing logo to main menu
+- [x] Update menu button colors to match logo aesthetic (#2fb8c9 to #217baf)
+- [x] Implement Main Menu with Play, Settings, About, and Quit options
+- [x] Add theme music playback on Main Menu (controls now functional)
 - [ ] Fix TypeScript errors in UI components
 - [ ] Implement missing PlayerController methods for UI integration
-- [ ] Ensure proper menu transitions and callbacks
 - [ ] Test UI system with gameplay integration
-- [ ] Implement Main Menu with Play, Settings, About, and Quit options
-- [ ] Add theme music playback on Main Menu
 
 ### Audio System
 - [x] Set up spatial audio engine
-- [x] Implement weapon sound effects
-- [x] Create player movement sounds
-- [x] Add environmental ambient sounds
-- [x] Implement enemy audio cues
+- [x] Implement sound effects for weapons and interactions
+- [x] Integrate background music for levels
+- [x] Control audio volume via settings menu
+- [x] Add audio cues for game events
+- [x] Document audio system in audio_design.md
+- [x] Ensure theme music plays on initial main menu display
 
 ### Performance Optimization
 - [x] Implement asset streaming system
