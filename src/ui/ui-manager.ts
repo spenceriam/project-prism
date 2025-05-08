@@ -12,6 +12,7 @@ import { HUD } from './hud';
 import { MenuSystem } from './menus';
 import { DialogSystem } from './dialogs';
 import { PlayerController } from '../components/player/playerController';
+import { CodeBackgroundEffect } from '../utils/codeBackgroundEffect';
 
 export class UIManager {
   private scene: BABYLON.Scene;
@@ -33,42 +34,86 @@ export class UIManager {
   // Player reference
   private playerController: PlayerController | null = null;
   
+  // Background effects
+  private codeBackgroundEffect: CodeBackgroundEffect | null = null;
+  
   // Event callbacks
   public onStartGame: (() => void) | null = null;
   public onQuitGame: (() => void) | null = null;
   
   constructor(scene: BABYLON.Scene, engine: BABYLON.Engine) {
-    this.scene = scene;
-    this.engine = engine;
-    this.canvas = engine.getRenderingCanvas() as HTMLCanvasElement;
-    
-    // Create fullscreen UI
-    this.advancedTexture = GUI.AdvancedDynamicTexture.CreateFullscreenUI("UI", true, scene);
-    this.advancedTexture.renderScale = 1.0;
-    
-    // Initialize UI components
-    this.dialogSystem = new DialogSystem(this.advancedTexture, scene);
-    this.hud = new HUD(this.advancedTexture, scene);
-    this.menuSystem = new MenuSystem(this.advancedTexture, scene, this, this.dialogSystem);
-    
-    // Set up event listeners
-    this.setupEventListeners();
+    try {
+      console.log('Initializing UIManager...');
+      this.scene = scene;
+      this.engine = engine;
+      this.canvas = engine.getRenderingCanvas() as HTMLCanvasElement;
+      
+      // Create fullscreen UI
+      console.log('Creating AdvancedDynamicTexture...');
+      this.advancedTexture = GUI.AdvancedDynamicTexture.CreateFullscreenUI("UI", true, scene);
+      this.advancedTexture.renderScale = 1.0;
+      this.advancedTexture.useInvalidateRectOptimization = false; // Disable optimization for debugging
+      this.advancedTexture.premulAlpha = false; // Try different alpha blending
+      
+      console.log('Creating DialogSystem...');
+      this.dialogSystem = new DialogSystem(this.advancedTexture, scene);
+      
+      console.log('Creating HUD...');
+      this.hud = new HUD(this.advancedTexture, scene);
+      
+      console.log('Creating MenuSystem...');
+      this.menuSystem = new MenuSystem(this.advancedTexture, scene, this, this.dialogSystem);
+      
+      // Set up event listeners
+      this.setupEventListeners();
+      console.log('UIManager initialization complete');
+    } catch (error) {
+      console.error('Error initializing UIManager:', error);
+    }
   }
   
   /**
    * Initialize the UI system
    */
   public initialize(): void {
-    // Initialize HUD
-    this.hud.initialize();
-    
-    // Initialize menu system but keep it hidden
-    this.menuSystem.initialize();
-    this.menuSystem.hide();
-    
-    // Initialize dialog system but keep it hidden
-    this.dialogSystem.initialize();
-    this.dialogSystem.hide();
+    try {
+      console.log('Initializing UI components...');
+      
+      // Initialize HUD
+      console.log('Initializing HUD...');
+      this.hud.initialize();
+      
+      // Initialize menu system but keep it hidden
+      console.log('Initializing MenuSystem...');
+      this.menuSystem.initialize();
+      
+      // Initialize dialog system but keep it hidden
+      console.log('Initializing DialogSystem...');
+      
+      // Initialize code background effect
+      console.log('Initializing Code Background Effect...');
+      try {
+        // Create a new code background effect
+        this.codeBackgroundEffect = new CodeBackgroundEffect('codeBackground');
+        
+        // Make sure it's visible with higher opacity
+        this.codeBackgroundEffect.setOpacity(0.8);
+        
+        // Start the effect with a 7-second delay for the loading screen
+        this.codeBackgroundEffect.start(7000); // 7000ms = 7 seconds
+        
+        console.log('Code background effect started successfully');
+      } catch (error) {
+        console.error('Error initializing code background effect:', error);
+        // Continue even if background effect fails
+      }
+      this.dialogSystem.initialize();
+      this.dialogSystem.hide();
+      
+      console.log('UI initialization complete');
+    } catch (error) {
+      console.error('Error during UI initialization:', error);
+    }
   }
   
   /**
@@ -131,23 +176,92 @@ export class UIManager {
   /**
    * Show the main menu
    */
-  public showMainMenu(): void {
-    this.isMenuActive = true;
-    this.menuSystem.showMainMenu();
-    this.hud.hide();
-    
-    // Set up menu callbacks
-    this.menuSystem.setStartGameCallback(() => {
-      if (this.onStartGame) {
-        this.onStartGame();
+  public async showMainMenu(): Promise<void> {
+    try {
+      console.log('UIManager.showMainMenu() called');
+      console.log('Current UI state - isMenuActive:', this.isMenuActive);
+      this.isMenuActive = true;
+      
+      // Check if AdvancedDynamicTexture is initialized
+      if (!this.advancedTexture) {
+        console.error('AdvancedDynamicTexture is not initialized');
+        return;
       }
-    });
-    
-    this.menuSystem.setQuitGameCallback(() => {
-      if (this.onQuitGame) {
-        this.onQuitGame();
+      console.log('AdvancedDynamicTexture exists:', !!this.advancedTexture);
+      
+      if (!this.menuSystem) {
+        console.error('MenuSystem is not initialized');
+        return;
       }
-    });
+      console.log('MenuSystem exists:', !!this.menuSystem);
+      
+      // Ensure the code background effect is visible and running
+      if (this.codeBackgroundEffect) {
+        console.log('Ensuring code background effect is visible');
+        
+        // Force the canvas element to be visible with inline styles
+        const canvasElement = document.getElementById('codeBackground') as HTMLCanvasElement;
+        if (canvasElement) {
+          canvasElement.style.display = 'block';
+          canvasElement.style.position = 'fixed';
+          canvasElement.style.top = '0';
+          canvasElement.style.left = '0';
+          canvasElement.style.width = '100%';
+          canvasElement.style.height = '100%';
+          canvasElement.style.zIndex = '1';
+          canvasElement.style.opacity = '0.8';
+          canvasElement.style.pointerEvents = 'none';
+          console.log('Code background canvas is now visible with forced styles');
+        }
+        
+        // Completely restart the effect
+        this.codeBackgroundEffect.stop();
+        setTimeout(() => {
+          if (this.codeBackgroundEffect) {
+            this.codeBackgroundEffect.start(7000); // 7-second delay
+            this.codeBackgroundEffect.setOpacity(0.8);
+            console.log('Code background effect restarted with high opacity');
+          }
+        }, 100);
+      } else {
+        // If not initialized, create it now
+        console.warn('Code background effect not initialized, creating now');
+        this.codeBackgroundEffect = new CodeBackgroundEffect('codeBackground');
+        this.codeBackgroundEffect.setOpacity(0.8);
+        this.codeBackgroundEffect.start(7000); // 7-second delay
+      }
+      
+      // Make sure menu system is visible first
+      this.menuSystem.show();
+      
+      // Now show the main menu
+      console.log('Calling menuSystem.showMainMenu()');
+      await this.menuSystem.showMainMenu();
+      
+      if (!this.hud) {
+        console.error('HUD is not initialized');
+        return;
+      }
+      
+      this.hud.hide();
+      
+      // Set up menu callbacks
+      this.menuSystem.setStartGameCallback(() => {
+        if (this.onStartGame) {
+          this.onStartGame();
+        }
+      });
+      
+      this.menuSystem.setQuitGameCallback(() => {
+        if (this.onQuitGame) {
+          this.onQuitGame();
+        }
+      });
+      
+      console.log('Main menu displayed successfully');
+    } catch (error) {
+      console.error('Error showing main menu:', error);
+    }
   }
   
   /**
@@ -169,6 +283,18 @@ export class UIManager {
    */
   public startGame(): void {
     this.isMenuActive = false;
+    
+    // Stop the code background effect with a fade out
+    if (this.codeBackgroundEffect) {
+      // Gradually decrease opacity then stop
+      this.codeBackgroundEffect.setOpacity(0);
+      setTimeout(() => {
+        if (this.codeBackgroundEffect) {
+          this.codeBackgroundEffect.stop();
+        }
+      }, 1000);
+    }
+    
     this.menuSystem.hide();
     this.hud.show();
   }
